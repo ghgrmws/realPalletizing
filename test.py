@@ -1,9 +1,10 @@
-import random
+from methods import generate_data
 
 
-def test():
+def play():
     return 0
 
 
 if __name__ == '__main__':
-    test()
+    # generate_data("Data")
+    play()
