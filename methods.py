@@ -1,7 +1,7 @@
+import csv
 import os.path
 import random
-from ortools.linear_solver import pywraplp
-from ortools.init import pywrapinit
+
 
 Type = {
     "1": [0, 1/2, 2/3, 1, 2/3, 1],
@@ -15,7 +15,7 @@ Type = {
 }
 
 
-class Instance:
+class Instance_Generator:
     def __init__(self, W, H, D, N, k):
         self.Width = W
         self.Height = H
@@ -71,7 +71,7 @@ def generate_data(dirs):
     for i in range(1, 6):
         for n in N:
             for cur in range(10):
-                inst = Instance(100, 100, 100, n, i)
+                inst = Instance_Generator(100, 100, 100, n, i)
                 inst.save_in_file(dirs + "/" + str(case) + ".csv")
                 case += 1
     """
@@ -79,22 +79,37 @@ def generate_data(dirs):
     """
     for n in N:
         for cur in range(10):
-            inst = Instance(10, 10, 10, n, 6)
+            inst = Instance_Generator(10, 10, 10, n, 6)
             inst.save_in_file(dirs + "/" + str(case) + ".csv")
             case += 1
     """
-    Class 6
+    Class 7
     """
     for n in N:
         for cur in range(10):
-            inst = Instance(40, 40, 40, n, 7)
+            inst = Instance_Generator(40, 40, 40, n, 7)
             inst.save_in_file(dirs + "/" + str(case) + ".csv")
             case += 1
     """
-    Class 6
+    Class 8
     """
     for n in N:
         for cur in range(10):
-            inst = Instance(100, 100, 100, n, 8)
+            inst = Instance_Generator(100, 100, 100, n, 8)
             inst.save_in_file(dirs + "/" + str(case) + ".csv")
             case += 1
+
+
+def get_data(file_path):
+    with open(file_path) as f:
+        reader = csv.reader(f)
+        headers = next(reader)
+        N = int(headers[0])
+        W = int(headers[1])
+        H = int(headers[2])
+        D = int(headers[3])
+        boxes = list()
+        for r in reader:
+            boxes.append(list(map(int, r)))
+    return N, W, H, D, boxes
+
