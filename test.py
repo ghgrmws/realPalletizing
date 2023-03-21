@@ -1,11 +1,11 @@
 import math
-
+from ortools.linear_solver import pywraplp
 from ortools.sat.python import cp_model
 
 from methods import get_data
 
 
-def resolve(file_path):
+def resolve_by_cp_model(file_path):
     N, L, W, H, boxes = get_data(file_path)
 
     outer = cp_model.CpModel()
@@ -52,9 +52,52 @@ def resolve(file_path):
     return -1
 
 
-def run():
-    result = resolve("Data\\" + "0.csv")
+def run_cp_model():
+    result = resolve_by_cp_model("Data\\" + "0.csv")
+
+
+def resolve_by_linear_solver(file_path):
+    N, L, W, H, boxes = get_data(file_path)
+
+    data = {
+        'length': [box[0] for box in boxes],
+        'width': [box[1] for box in boxes],
+        'height': [box[2] for box in boxes],
+    }
+
+    outer = pywraplp.Solver.CreateSolver('SCIP')
+
+    x = {}
+    for j in range(N):
+        x[j] = outer.BoolVar('x[%i]' % j)
+
+    constraint = outer.RowConstraint(0, L * W * H, '')
+    for j in range(N):
+        constraint.SetCoefficient(x[j], data['length'][j] * data['width'][j] * data['height'][j])
+
+    outer_objective = outer.Objective()
+    for j in range(N):
+        outer_objective.SetCoefficient(x[j], 1)
+    outer_objective.SetMaximization()
+
+    while True:
+        status = outer.Solve()
+        if status == pywraplp.Solver.OPTIMAL:
+            print('Objective value =', outer.Objective().Value())
+            for j in range(N):
+                print(x[j].name(), ' = ', x[j].solution_value())
+            print('Problem solved in %f milliseconds' % outer.wall_time())
+        else:
+            print('The problem does not have an optimal solution.')
+
+    return -1
+
+
+def run_linear_solver():
+    result = resolve_by_linear_solver("Data\\" + "0.csv")
 
 
 if __name__ == '__main__':
-    run()
+    # run_cp_model()
+    run_linear_solver()
+
