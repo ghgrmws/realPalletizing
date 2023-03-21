@@ -1,6 +1,7 @@
 import math
 
 from ortools.sat.python import cp_model
+
 from methods import get_data
 
 
@@ -22,14 +23,19 @@ def resolve(file_path):
         w.append(outer.NewConstant(boxes[i][1]))
         h.append(outer.NewConstant(boxes[i][2]))
 
-    # outer.Add()
+    print(type(b[0]))
 
-    for i in range(N):
-        outer.Maximize(b[i] * l[i] * w[i] * h[i])
+    # outer.Add(sum(b * l * w * h))
+
+    outer.Maximize(sum(b))
 
     while True:
         outer_solver = cp_model.CpSolver()
-        outer_status = outer_solver.Solve(outer)
+        # outer_status = outer_solver.Solve(outer)
+
+        solution_printer = cp_model.VarArraySolutionPrinter(b)
+        outer_solver.parameters.enumerate_all_solutions = True
+        outer_status = outer_solver.Solve(outer, solution_printer)
 
         inner = cp_model.CpModel()
 
