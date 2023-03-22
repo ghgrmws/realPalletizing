@@ -63,8 +63,13 @@ from methods import get_data
 
 def make_constraints(U, L, W, H):
     constraints = {
+        'num_constraints': U * (L * W + L * H, W * H),
+        'constraint_coeffs': list(),
         'bounds': [L, W, H, 0, 0, 0, 0, 0, 0, 1, 1]
     }
+
+    # xxx <= L
+
     return constraints
 
 
@@ -80,8 +85,10 @@ def resolve_by_linear_solver(file_path):
     outer = pywraplp.Solver.CreateSolver('SCIP')
 
     u = {}
+    arg_u = {}
     for i in range(N):
         u[i] = outer.BoolVar('u[%i]' % i)
+        arg_u[u[i]] = i
 
     outer_constraint = outer.RowConstraint(0, L * W * H, '')
     for i in range(N):
@@ -94,32 +101,69 @@ def resolve_by_linear_solver(file_path):
 
     while True:
 
-        inner = pywraplp.Solver.CreateSolver('SCIP')
+        v = {}  # subset of U
 
-        sub_u = {}
-
-        U = 0  # the number of selected boxes in the outer layer
+        V = 0  # the number of selected boxes in the outer layer
         outer_status = outer.Solve()
         if outer_status == pywraplp.Solver.OPTIMAL:
             print('Outer objective value =', outer.Objective().Value())
             for i in range(N):
                 if u[i].solution_value() > 0:
-                    sub_u[U] = u[i]
-                    U += 1
+                    v[V] = arg_u[u[i]]
+                    V += 1
                 # print(u[i].name(), ' = ', u[i].solution_value())
-            print(sub_u)
+            print(v)
             # print('Outer problem solved in %f milliseconds' % outer.wall_time())
         else:
             print('The outer problem does not have an optimal solution.')
 
-        v = {}
-        max_ite = U * (L * W + L * H + W * H)
-        for i in range(max_ite):
-            v[i] = inner.BoolVar('v[%i]' % i)
+        inner = cp_model.CpModel()
 
-        constraints = make_constraints(U, L, W, H)
-        inner_constraint = inner.RowConstraint(0, H, '')
+        dom = cp_model.Domain(0, 10)
+        print(dom.AllValues())
 
+        x = {}
+        y = {}
+        z = {}
+        b = [[list() for i in range(V)] for j in range(V)]
+
+        # every box should be totally in the space
+        for i in range(V):
+            x[i] = inner.NewIntVar(0, L - data['length'][i], 'x[%i]' % i)
+            y[i] = inner.NewIntVar(0, W - data['width'][i], 'y[%i]' % i)
+            z[i] = inner.NewIntVar(0, H - data['height'][i], 'z[%i]' % i)
+            for j in range(i + 1, V):
+                for k in range(6):
+                    b[i][j].append(inner.NewBoolVar('b[%i][%i][%i]' % (i, j, k)))
+
+        # print(b)
+
+        # inner_constraint = make_constraints(V, L, W, H)
+
+        for i in range(V):
+            for j in range(i + 1, V):
+                inner.Add(x[i] + data['length'][v[i]] - x[j] <= 0).OnlyEnforceIf(b[i][j][0])
+                inner.Add(x[j] + data['length'][v[j]] - x[i] <= 0).OnlyEnforceIf(b[i][j][1])
+                inner.Add(y[i] + data['width'][v[i]] - y[j] <= 0).OnlyEnforceIf(b[i][j][2])
+                inner.Add(y[j] + data['width'][v[j]] - y[i] <= 0).OnlyEnforceIf(b[i][j][3])
+                inner.Add(z[i] + data['height'][v[i]] - z[j] <= 0).OnlyEnforceIf(b[i][j][4])
+                inner.Add(z[j] + data['height'][v[j]] - z[i] <= 0).OnlyEnforceIf(b[i][j][5])
+                inner.AddBoolOr(b[i][j])
+
+        xyz = {}
+        xyz.update(x)
+        xyz.update(y)
+        xyz.update(z)
+        inner_solver = cp_model.CpSolver()
+        solution_printer = cp_model.VarArraySolutionPrinter(xyz)
+        # Enumerate all solutions.
+        inner_solver.parameters.enumerate_all_solutions = True
+        # Solve.
+        inner_status = inner_solver.Solve(inner, solution_printer)
+        print('Status = %s' % inner_solver.StatusName(inner_status))
+        print('Number of solutions found: %i' % solution_printer.solution_count())
+
+        a = 10
     return -1
 
 
