@@ -120,7 +120,7 @@ def resolve_by_linear_solver(file_path):
         inner = cp_model.CpModel()
 
         dom = cp_model.Domain(0, 10)
-        print(dom.AllValues())
+        # print(dom.AllValues())
 
         x = {}
         y = {}
@@ -160,8 +160,14 @@ def resolve_by_linear_solver(file_path):
         inner_solver.parameters.enumerate_all_solutions = True
         # Solve.
         inner_status = inner_solver.Solve(inner, solution_printer)
-        print('Status = %s' % inner_solver.StatusName(inner_status))
-        print('Number of solutions found: %i' % solution_printer.solution_count())
+        if inner_solver.StatusName(inner_status) == 'INFEASIBLE':
+            outer_constraint = outer.RowConstraint(0, V - 1, '')
+            for i in v:
+                outer_constraint.SetCoefficient(u[i], 1)
+        else:
+            print('Status = %s' % inner_solver.StatusName(inner_status))
+            print('Number of solutions found: %i' % solution_printer.solution_count())
+            return
 
 
 def run_linear_solver():
