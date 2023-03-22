@@ -67,28 +67,39 @@ def resolve_by_linear_solver(file_path):
 
     outer = pywraplp.Solver.CreateSolver('SCIP')
 
-    x = {}
-    for j in range(N):
-        x[j] = outer.BoolVar('x[%i]' % j)
+    u = {}
+    for i in range(N):
+        u[i] = outer.BoolVar('u[%i]' % i)
 
     constraint = outer.RowConstraint(0, L * W * H, '')
-    for j in range(N):
-        constraint.SetCoefficient(x[j], data['length'][j] * data['width'][j] * data['height'][j])
+    for i in range(N):
+        constraint.SetCoefficient(u[i], data['length'][i] * data['width'][i] * data['height'][i])
 
     outer_objective = outer.Objective()
-    for j in range(N):
-        outer_objective.SetCoefficient(x[j], 1)
+    for i in range(N):
+        outer_objective.SetCoefficient(u[i], data['length'][i] * data['width'][i] * data['height'][i])
     outer_objective.SetMaximization()
 
     while True:
-        status = outer.Solve()
-        if status == pywraplp.Solver.OPTIMAL:
-            print('Objective value =', outer.Objective().Value())
-            for j in range(N):
-                print(x[j].name(), ' = ', x[j].solution_value())
-            print('Problem solved in %f milliseconds' % outer.wall_time())
+
+        inner = pywraplp.Solver.CreateSolver('SCIP')
+
+        v = {}
+
+        outer_status = outer.Solve()
+        if outer_status == pywraplp.Solver.OPTIMAL:
+            print('Outer objective value =', outer.Objective().Value())
+            j = 0
+            for i in range(N):
+                if u[i].solution_value():
+                    v[j] = inner.BoolVar('v[%i]' % j)
+                    j += 1
+                # print(x[i].name(), ' = ', x[i].solution_value())
+            # print('Outer problem solved in %f milliseconds' % outer.wall_time())
         else:
-            print('The problem does not have an optimal solution.')
+            print('The outer problem does not have an optimal solution.')
+
+        s
 
     return -1
 
