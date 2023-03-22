@@ -163,9 +163,6 @@ def resolve_by_linear_solver(file_path):
         print('Status = %s' % inner_solver.StatusName(inner_status))
         print('Number of solutions found: %i' % solution_printer.solution_count())
 
-        a = 10
-    return -1
-
 
 def run_linear_solver():
     result = resolve_by_linear_solver("Data\\" + "0.csv")
