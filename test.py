@@ -239,7 +239,7 @@ def resolve_by_linear_solver(file_path):
 
 
 def run_linear_solver():
-    result = resolve_by_linear_solver("Data\\" + "200.csv")
+    result = resolve_by_linear_solver("Try\\" + "0.csv")
 
 
 if __name__ == '__main__':
