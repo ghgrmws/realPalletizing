@@ -112,15 +112,12 @@ def resolve_by_linear_solver(file_path):
                     v[V] = arg_u[u[i]]
                     V += 1
                 # print(u[i].name(), ' = ', u[i].solution_value())
-            print(v)
+            # print(v)
             # print('Outer problem solved in %f milliseconds' % outer.wall_time())
         else:
             print('The outer problem does not have an optimal solution.')
 
         inner = cp_model.CpModel()
-
-        dom = cp_model.Domain(0, 10)
-        # print(dom.AllValues())
 
         x = {}
         y = {}
@@ -155,18 +152,30 @@ def resolve_by_linear_solver(file_path):
         xyz.update(y)
         xyz.update(z)
         inner_solver = cp_model.CpSolver()
-        solution_printer = cp_model.VarArraySolutionPrinter(xyz)
+
         # Enumerate all solutions.
-        inner_solver.parameters.enumerate_all_solutions = True
+        # solution_printer = cp_model.VarArraySolutionPrinter(xyz)
+        # inner_solver.parameters.enumerate_all_solutions = True
+
         # Solve.
-        inner_status = inner_solver.Solve(inner, solution_printer)
+        inner_status = inner_solver.Solve(inner)
         if inner_solver.StatusName(inner_status) == 'INFEASIBLE':
             outer_constraint = outer.RowConstraint(0, V - 1, '')
-            for i in v:
-                outer_constraint.SetCoefficient(u[i], 1)
+            for i in range(V):
+                outer_constraint.SetCoefficient(u[v[i]], 1)
+            # print('Number of constraints =', outer.NumConstraints())
         else:
             print('Status = %s' % inner_solver.StatusName(inner_status))
-            print('Number of solutions found: %i' % solution_printer.solution_count())
+            # print('Number of solutions found: %i' % solution_printer.solution_count())
+
+            for i in range(V):
+                print('x[%i] = %i' % (i, inner_solver.Value(x[i])), end=', ')
+                print('y[%i] = %i' % (i, inner_solver.Value(y[i])), end=', ')
+                print('z[%i] = %i' % (i, inner_solver.Value(z[i])))
+                for j in range(i + 1, V):
+                    for k in range(6):
+                        print('b[%i][%i][%i] = %i' % (i, j, k, inner_solver.Value(b[i][j][k])))
+
             return
 
 
