@@ -63,12 +63,12 @@ from methods import get_data
 #     result = resolve_by_cp_model("Data\\" + "0.csv")
 
 
-def box_rotation(boxes):
+def box_rotation(boxes, N):
     ite = list()
     i = 0
 
     new_boxes = list()
-    for b in boxes:
+    for b in boxes[:N]:
         s = set()
         s.add((b[0], b[1], b[2]))
         s.add((b[0], b[2], b[1]))
@@ -97,18 +97,29 @@ def make_constraints(U, L, W, H):
     return constraints
 
 
-def print_solution(solver, x, y, z, b, V):
-    for i in range(V):
-        print('x[%i] = %i' % (i, solver.Value(x[i])), end=', ')
-        print('y[%i] = %i' % (i, solver.Value(y[i])), end=', ')
-        print('z[%i] = %i' % (i, solver.Value(z[i])))
-    for i in range(V):
-        for j in range(i + 1, V):
-            for k in range(6):
-                print('b[%i][%i][%i] = %i' % (i, j, k, solver.Value(b[i][j][k])))
+def print_solution(solver, x, y, z, b, u, V, v, arg_u, data, file_path):
+    with open(file_path + '.out', 'a') as f:
+        f.write("box_id,width,height,depth,x,y,z\n")
+        for i in range(V):
+            box = arg_u[u[v[i]]]
+            f.write(str(box) + ',')  # box id
+            f.write(str(data['width'][v[i]]) + ',')
+            f.write(str(data['height'][v[i]]) + ',')
+            f.write(str(data['depth'][v[i]]) + ',')
+            f.write(str(solver.Value(x[i])) + ',')  # placed position x
+            f.write(str(solver.Value(y[i])) + ',')
+            f.write(str(solver.Value(z[i])) + '\n')
+        f.write("box_a,box_b,satisfied_constraint\n")
+        for i in range(V):
+            for j in range(i + 1, V):
+                for k in range(6):
+                    if solver.BooleanValue(b[i][j][k]):
+                        box_a = arg_u[u[v[i]]]
+                        box_b = arg_u[u[v[j]]]
+                        f.write(str(box_a) + ',' + str(box_b) + ',' + str(k) + '\n')
 
 
-def check_correctness(solver, x, y, z, b, v, V, W, H, D, data):
+def check_correctness(solver, x, y, z, v, V, W, H, D, data):
     s = -np.ones((W + 1, H + 1, D + 1))
     for i in range(V):
         px = solver.Value(x[i])
@@ -129,11 +140,12 @@ def check_correctness(solver, x, y, z, b, v, V, W, H, D, data):
     print("It's correct!")
 
 
-def resolve_by_linear_solver(file_path):
+def resolve(file_path):
+    running_time = 0
 
     N, W, H, D, boxes = get_data(file_path)
 
-    ites, boxes = box_rotation(boxes)
+    ites, boxes = box_rotation(boxes, N)
     N = len(boxes)
 
     data = {
@@ -170,6 +182,7 @@ def resolve_by_linear_solver(file_path):
         V = 0  # the number of selected boxes in the outer layer
         outer_status = outer.Solve()
         if outer_status == pywraplp.Solver.OPTIMAL:
+            running_time += outer.wall_time()
             # print('Outer objective value =', outer.Objective().Value())
             for i in range(N):
                 if u[i].solution_value() > 0:
@@ -180,6 +193,7 @@ def resolve_by_linear_solver(file_path):
             # print('Outer problem solved in %f milliseconds' % outer.wall_time())
         else:
             print('The outer problem does not have an optimal solution.')
+            return
 
         inner = cp_model.CpModel()
 
@@ -211,10 +225,6 @@ def resolve_by_linear_solver(file_path):
                 inner.Add(z[j] + data['depth'][v[j]] - z[i] <= 0).OnlyEnforceIf(b[i][j][5])
                 inner.AddBoolOr(b[i][j])
 
-        xyz = {}
-        xyz.update(x)
-        xyz.update(y)
-        xyz.update(z)
         inner_solver = cp_model.CpSolver()
 
         # Enumerate all solutions.
@@ -223,6 +233,10 @@ def resolve_by_linear_solver(file_path):
 
         # Solve.
         inner_status = inner_solver.Solve(inner)
+
+        running_time += inner_solver.WallTime() * 1000
+        # inner returns in seconds, but outer returns in milliseconds
+
         if inner_solver.StatusName(inner_status) == 'INFEASIBLE':
             outer_constraint = outer.RowConstraint(0, V - 1, '')
             for i in range(V):
@@ -232,16 +246,14 @@ def resolve_by_linear_solver(file_path):
             print('Status = %s' % inner_solver.StatusName(inner_status))
             print('Outer objective value =', outer.Objective().Value())
             # print('Number of solutions found: %i' % solution_printer.solution_count())
-            print_solution(inner_solver, x, y, z, b, V)
-            check_correctness(inner_solver, x, y, z, b, v, V, W, H, D, data)
-
+            check_correctness(inner_solver, x, y, z, v, V, W, H, D, data)
+            print_solution(inner_solver, x, y, z, b, u, V, v, arg_u, data, file_path)
             return
 
 
-def run_linear_solver():
-    result = resolve_by_linear_solver("Try\\" + "0.csv")
+def run():
+    resolve("Try\\" + "0.csv")
 
 
 if __name__ == '__main__':
-    # run_cp_model()
-    run_linear_solver()
+    run()
