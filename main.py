@@ -20,19 +20,7 @@ def box_rotation(boxes, N):
     return new_boxes
 
 
-def make_constraints(U, L, W, H):
-    constraints = {
-        'num_constraints': U * (L * W + L * H, W * H),
-        'constraint_coeffs': list(),
-        'bounds': [L, W, H, 0, 0, 0, 0, 0, 0, 1, 1]
-    }
-
-    # xxx <= L
-
-    return constraints
-
-
-def print_solution(solver, x, y, z, b, u, V, v, arg_u, data, file_path):
+def print_solution(solver, x, y, z, b, V, v, data, file_path):
     with open(file_path + '.out', 'a') as f:
         f.write("box_id,width,height,depth,x,y,z\n")
         for i in range(V):
@@ -68,10 +56,6 @@ def check_correctness(solver, x, y, z, v, V, W, H, D, data):
                         print("It's incorrect!")
                     else:
                         s[px + w][py + h][pz + d] = v[i]
-    # for i in range(V):
-    #     for j in range(i + 1, V):
-    #         for k in range(6):
-    #             print('b[%i][%i][%i] = %i' % (i, j, k, solver.Value(b[i][j][k])))
     print("It's correct!")
 
 
@@ -117,7 +101,7 @@ def resolve(file_path):
         V = 0  # the number of selected boxes in the outer layer
         outer_status = outer.Solve()
         if outer_status == pywraplp.Solver.OPTIMAL:
-            # running_time += outer.wall_time() / 1000  # transform millisecond to second here
+            running_time += outer.wall_time() / 1000  # transform millisecond to second here
             for i in range(N):
                 if u[i].solution_value() > 0:
                     v[V] = arg_u[u[i]]
@@ -142,10 +126,6 @@ def resolve(file_path):
                 for k in range(6):
                     b[i][j].append(inner.NewBoolVar('b[%i][%i][%i]' % (i, j, k)))
 
-        # print(b)
-
-        # inner_constraint = make_constraints(V, L, W, H)
-
         for i in range(V):
             for j in range(i + 1, V):
                 inner.Add(x[i] + data['width'][v[i]] - x[j] <= 0).OnlyEnforceIf(b[i][j][0])
@@ -158,10 +138,6 @@ def resolve(file_path):
 
         inner_solver = cp_model.CpSolver()
 
-        # Enumerate all solutions.
-        # solution_printer = cp_model.VarArraySolutionPrinter(xyz)
-        # inner_solver.parameters.enumerate_all_solutions = True
-
         # Solve.
         inner_status = inner_solver.Solve(inner)
 
@@ -169,23 +145,23 @@ def resolve(file_path):
         # inner returns in seconds, but outer returns in milliseconds
 
         if inner_solver.StatusName(inner_status) == 'INFEASIBLE':
+            print('Outer objective value =', outer.Objective().Value())
+            print('The total running time is %i.' % running_time)
             outer_constraint = outer.RowConstraint(0, V - 1, '')
             for i in range(V):
                 outer_constraint.SetCoefficient(u[v[i]], 1)
-            print('\rNumber of constraints =', outer.NumConstraints(), end='')
+            print('Number of constraints =', outer.NumConstraints())
         else:
             print('')
-            # print('Status = %s' % inner_solver.StatusName(inner_status))
             print('Outer objective value =', outer.Objective().Value())
             print('The total running time is %i.' % running_time)
-            # print('Number of solutions found: %i' % solution_printer.solution_count())
             check_correctness(inner_solver, x, y, z, v, V, W, H, D, data)
-            print_solution(inner_solver, x, y, z, b, u, V, v, arg_u, data, file_path)
+            print_solution(inner_solver, x, y, z, b, V, v, data, file_path)
             return
 
 
 def main():
-    resolve("Try\\" + "0.csv")
+    resolve("Try\\" + "1.csv")
 
 
 if __name__ == '__main__':

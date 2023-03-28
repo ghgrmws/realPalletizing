@@ -116,7 +116,7 @@ def get_data(file_path):
     return N, W, H, D, boxes
 
 
-def cutting_generator(W, H, D, extra_rate):
+def cutting_generator(W, H, D, extra_rate, lower_bound):
     # 10 - 60 cm
     box = collections.namedtuple('box', ['v', 'w', 'h', 'd'])
     q = PriorityQueue()
@@ -130,22 +130,22 @@ def cutting_generator(W, H, D, extra_rate):
         ds = list()
 
         space = q.get()
-        if space.w >= 20:
-            mid_w = random.randint(10, space.w)
+        if space.w >= lower_bound * 2:
+            mid_w = random.randint(lower_bound, space.w)
             ws.append(mid_w)
             ws.append(space.w - mid_w)
         else:
             ws.append(space.w)
 
-        if space.h >= 20:
-            mid_h = random.randint(10, space.h)
+        if space.h >= lower_bound * 2:
+            mid_h = random.randint(lower_bound, space.h)
             hs.append(mid_h)
             hs.append(space.h - mid_h)
         else:
             hs.append(space.h)
 
-        if space.d >= 20:
-            mid_d = random.randint(10, space.d)
+        if space.d >= lower_bound * 2:
+            mid_d = random.randint(lower_bound, space.d)
             ds.append(mid_d)
             ds.append(space.d - mid_d)
         else:
@@ -161,15 +161,15 @@ def cutting_generator(W, H, D, extra_rate):
 
     count = len(bs)
     for i in range(int(count * extra_rate)):
-        w = random.randint(10, W)
-        h = random.randint(10, H)
-        d = random.randint(10, D)
+        w = random.randint(lower_bound, W)
+        h = random.randint(lower_bound, H)
+        d = random.randint(lower_bound, D)
         bs.insert(0, (w, h, d))
     return bs
 
 
-def generate_cutting_data(file_path, W, H, D, extra_rate):
-    boxes = cutting_generator(W, H, D, extra_rate)
+def generate_cutting_data(file_path, W, H, D, extra_rate, lower_bound):
+    boxes = cutting_generator(W, H, D, extra_rate, lower_bound)
     with open(file_path, 'a') as f:
         N = len(boxes)
         f.write('%i,%i,%i,%i\n' % (N, W, H, D))
