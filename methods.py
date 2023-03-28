@@ -1,6 +1,8 @@
+import collections
 import csv
 import os.path
 import random
+from queue import PriorityQueue
 
 
 Type = {
@@ -113,3 +115,64 @@ def get_data(file_path):
             boxes.append(list(map(int, r)))
     return N, W, H, D, boxes
 
+
+def cutting_generator(W, H, D, extra_rate):
+    # 10 - 60 cm
+    box = collections.namedtuple('box', ['v', 'w', 'h', 'd'])
+    q = PriorityQueue()
+    q.put(box(v=-W*H*D, w=W, h=H, d=D))
+    bs = list()
+    while not q.empty():
+        print(q.qsize())
+
+        ws = list()
+        hs = list()
+        ds = list()
+
+        space = q.get()
+        if space.w >= 20:
+            mid_w = random.randint(10, space.w)
+            ws.append(mid_w)
+            ws.append(space.w - mid_w)
+        else:
+            ws.append(space.w)
+
+        if space.h >= 20:
+            mid_h = random.randint(10, space.h)
+            hs.append(mid_h)
+            hs.append(space.h - mid_h)
+        else:
+            hs.append(space.h)
+
+        if space.d >= 20:
+            mid_d = random.randint(10, space.d)
+            ds.append(mid_d)
+            ds.append(space.d - mid_d)
+        else:
+            ds.append(space.d)
+
+        if len(ws) == 1 and len(hs) == 1 and len(ds) == 1:
+            bs.append((ws[0], hs[0], ds[0]))
+        else:
+            for i in ws:
+                for j in hs:
+                    for k in ds:
+                        q.put(box(v=-i * j * k, w=i, h=j, d=k))
+
+    count = len(bs)
+    for i in range(int(count * extra_rate)):
+        w = random.randint(10, W)
+        h = random.randint(10, H)
+        d = random.randint(10, D)
+        bs.insert(0, (w, h, d))
+    return bs
+
+
+def generate_cutting_data(file_path, W, H, D, extra_rate):
+    boxes = cutting_generator(W, H, D, extra_rate)
+    with open(file_path, 'a') as f:
+        N = len(boxes)
+        f.write('%i,%i,%i,%i\n' % (N, W, H, D))
+        for b in boxes:
+            f.write('%i,%i,%i\n' % (b[0], b[1], b[2]))
+    return

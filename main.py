@@ -13,25 +13,11 @@ from methods import get_data
 
 
 def box_rotation(boxes, N):
-    ite = list()
-    i = 0
-
     new_boxes = list()
     for b in boxes[:N]:
-        s = set()
-        s.add((b[0], b[1], b[2]))
-        s.add((b[0], b[2], b[1]))
-        s.add((b[1], b[0], b[2]))
-        s.add((b[1], b[2], b[0]))
-        s.add((b[2], b[1], b[0]))
-        s.add((b[2], b[0], b[1]))
-        id = list()
-        for a in s:
-            new_boxes.append(list(a))
-            id.append(i)
-            i += 1
-        ite.append(id)
-    return ite, new_boxes
+        new_boxes.append([b[0], b[1], b[2]])
+        new_boxes.append([b[2], b[1], b[0]])
+    return new_boxes
 
 
 def make_constraints(U, L, W, H):
@@ -50,7 +36,7 @@ def print_solution(solver, x, y, z, b, u, V, v, arg_u, data, file_path):
     with open(file_path + '.out', 'a') as f:
         f.write("box_id,width,height,depth,x,y,z\n")
         for i in range(V):
-            box = arg_u[u[v[i]]]
+            box = v[i]
             f.write(str(box) + ',')  # box id
             f.write(str(data['width'][v[i]]) + ',')
             f.write(str(data['height'][v[i]]) + ',')
@@ -63,8 +49,8 @@ def print_solution(solver, x, y, z, b, u, V, v, arg_u, data, file_path):
             for j in range(i + 1, V):
                 for k in range(6):
                     if solver.BooleanValue(b[i][j][k]):
-                        box_a = arg_u[u[v[i]]]
-                        box_b = arg_u[u[v[j]]]
+                        box_a = v[i]
+                        box_b = v[j]
                         f.write(str(box_a) + ',' + str(box_b) + ',' + str(k) + '\n')
 
 
@@ -94,7 +80,7 @@ def resolve(file_path):
 
     N, W, H, D, boxes = get_data(file_path)
 
-    ites, boxes = box_rotation(boxes, N)
+    boxes = box_rotation(boxes, N)
     N = len(boxes)
 
     data = {
@@ -114,10 +100,10 @@ def resolve(file_path):
     outer_constraint = outer.RowConstraint(0, W * H * D, '')
     for i in range(N):
         outer_constraint.SetCoefficient(u[i], data['width'][i] * data['height'][i] * data['depth'][i])
-    for ite in ites:
+    for i in range(0, N, 2):
         outer_constraint = outer.RowConstraint(0, 1, '')
-        for i in ite:
-            outer_constraint.SetCoefficient(u[i], 1)
+        outer_constraint.SetCoefficient(u[i], 1)
+        outer_constraint.SetCoefficient(u[i + 1], 1)
 
     outer_objective = outer.Objective()
     for i in range(N):
@@ -131,7 +117,7 @@ def resolve(file_path):
         V = 0  # the number of selected boxes in the outer layer
         outer_status = outer.Solve()
         if outer_status == pywraplp.Solver.OPTIMAL:
-            running_time += outer.wall_time() / 1000  # transform millisecond to second here
+            # running_time += outer.wall_time() / 1000  # transform millisecond to second here
             for i in range(N):
                 if u[i].solution_value() > 0:
                     v[V] = arg_u[u[i]]
@@ -186,9 +172,10 @@ def resolve(file_path):
             outer_constraint = outer.RowConstraint(0, V - 1, '')
             for i in range(V):
                 outer_constraint.SetCoefficient(u[v[i]], 1)
-            print('Number of constraints =', outer.NumConstraints())
+            print('\rNumber of constraints =', outer.NumConstraints(), end='')
         else:
-            print('Status = %s' % inner_solver.StatusName(inner_status))
+            print('')
+            # print('Status = %s' % inner_solver.StatusName(inner_status))
             print('Outer objective value =', outer.Objective().Value())
             print('The total running time is %i.' % running_time)
             # print('Number of solutions found: %i' % solution_printer.solution_count())
