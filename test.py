@@ -1,8 +1,8 @@
-from methods import generate_cutting_data
+from methods import propose_strategy
 
 
 def run():
-    generate_cutting_data("Try\\3.csv", 20, 20, 20, 0.1, 5)
+    propose_strategy("0.csv")
     return
 
 

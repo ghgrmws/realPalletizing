@@ -52,15 +52,15 @@ def check_correctness(solver, x, y, z, v, V, W, H, D, data):
             for h in range(data['height'][v[i]]):
                 for d in range(data['depth'][v[i]]):
                     # print(px, py, pz, data['width'][v[i]], data['height'][v[i]], data['depth'][v[i]])
-                    if s[px + w][py + h][pz + d] != -1:
+                    if s[px + d][py + w][pz + h] != -1:
                         print("It's incorrect!")
                     else:
-                        s[px + w][py + h][pz + d] = v[i]
+                        s[px + d][py + w][pz + h] = v[i]
     print("It's correct!")
 
 
 def resolve(file_path):
-    running_time = 0
+    # running_time = 0
 
     N, W, H, D, boxes = get_data(file_path)
 
@@ -101,7 +101,7 @@ def resolve(file_path):
         V = 0  # the number of selected boxes in the outer layer
         outer_status = outer.Solve()
         if outer_status == pywraplp.Solver.OPTIMAL:
-            running_time += outer.wall_time() / 1000  # transform millisecond to second here
+            # running_time += outer.wall_time() / 1000  # transform millisecond to second here
             for i in range(N):
                 if u[i].solution_value() > 0:
                     v[V] = arg_u[u[i]]
@@ -119,21 +119,21 @@ def resolve(file_path):
 
         # every box should be totally in the space
         for i in range(V):
-            x[i] = inner.NewIntVar(0, W - data['width'][v[i]], 'x[%i]' % i)
-            y[i] = inner.NewIntVar(0, H - data['height'][v[i]], 'y[%i]' % i)
-            z[i] = inner.NewIntVar(0, D - data['depth'][v[i]], 'z[%i]' % i)
+            y[i] = inner.NewIntVar(0, W - data['width'][v[i]], 'x[%i]' % i)
+            z[i] = inner.NewIntVar(0, H - data['height'][v[i]], 'y[%i]' % i)
+            x[i] = inner.NewIntVar(0, D - data['depth'][v[i]], 'z[%i]' % i)
             for j in range(i + 1, V):
                 for k in range(6):
                     b[i][j].append(inner.NewBoolVar('b[%i][%i][%i]' % (i, j, k)))
 
         for i in range(V):
             for j in range(i + 1, V):
-                inner.Add(x[i] + data['width'][v[i]] - x[j] <= 0).OnlyEnforceIf(b[i][j][0])
-                inner.Add(x[j] + data['width'][v[j]] - x[i] <= 0).OnlyEnforceIf(b[i][j][1])
-                inner.Add(y[i] + data['height'][v[i]] - y[j] <= 0).OnlyEnforceIf(b[i][j][2])
-                inner.Add(y[j] + data['height'][v[j]] - y[i] <= 0).OnlyEnforceIf(b[i][j][3])
-                inner.Add(z[i] + data['depth'][v[i]] - z[j] <= 0).OnlyEnforceIf(b[i][j][4])
-                inner.Add(z[j] + data['depth'][v[j]] - z[i] <= 0).OnlyEnforceIf(b[i][j][5])
+                inner.Add(x[i] + data['depth'][v[i]] - x[j] <= 0).OnlyEnforceIf(b[i][j][0])
+                inner.Add(x[j] + data['depth'][v[j]] - x[i] <= 0).OnlyEnforceIf(b[i][j][1])
+                inner.Add(y[i] + data['width'][v[i]] - y[j] <= 0).OnlyEnforceIf(b[i][j][2])
+                inner.Add(y[j] + data['width'][v[j]] - y[i] <= 0).OnlyEnforceIf(b[i][j][3])
+                inner.Add(z[i] + data['height'][v[i]] - z[j] <= 0).OnlyEnforceIf(b[i][j][4])
+                inner.Add(z[j] + data['height'][v[j]] - z[i] <= 0).OnlyEnforceIf(b[i][j][5])
                 inner.AddBoolOr(b[i][j])
 
         inner_solver = cp_model.CpSolver()
@@ -141,12 +141,12 @@ def resolve(file_path):
         # Solve.
         inner_status = inner_solver.Solve(inner)
 
-        running_time += inner_solver.WallTime()
+        # running_time += inner_solver.WallTime()
         # inner returns in seconds, but outer returns in milliseconds
 
         if inner_solver.StatusName(inner_status) == 'INFEASIBLE':
             print('Outer objective value =', outer.Objective().Value())
-            print('The total running time is %i.' % running_time)
+            # print('The total running time is %i.' % running_time)
             outer_constraint = outer.RowConstraint(0, V - 1, '')
             for i in range(V):
                 outer_constraint.SetCoefficient(u[v[i]], 1)
@@ -154,7 +154,7 @@ def resolve(file_path):
         else:
             print('')
             print('Outer objective value =', outer.Objective().Value())
-            print('The total running time is %i.' % running_time)
+            # print('The total running time is %i.' % running_time)
             check_correctness(inner_solver, x, y, z, v, V, W, H, D, data)
             print_solution(inner_solver, x, y, z, b, V, v, data, file_path)
             return

@@ -4,6 +4,10 @@ import os.path
 import random
 from queue import PriorityQueue
 
+import numpy as np
+
+from Algorithms.Classes import Box
+
 
 Type = {
     "1": [0, 1/2, 2/3, 1, 2/3, 1],
@@ -175,4 +179,17 @@ def generate_cutting_data(file_path, W, H, D, extra_rate, lower_bound):
         f.write('%i,%i,%i,%i\n' % (N, W, H, D))
         for b in boxes:
             f.write('%i,%i,%i\n' % (b[0], b[1], b[2]))
+    return
+
+
+def propose_strategy(file_path):
+    boxes = list()
+    with open(file_path, 'r') as f:
+        data = csv.reader(f)
+        for d in data:
+            boxes.append(Box(int(d[1]), int(d[2]), int(d[3]), int(d[4]), int(d[5]), int(d[6])))
+    place = np.zeros((30, 30))
+    boxes.sort()
+    for b in boxes:
+        print(b)
     return
