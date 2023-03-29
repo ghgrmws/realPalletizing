@@ -19,7 +19,17 @@ class Box:
 
     def __lt__(self, other):
         a, b, c = other.get_position()
-        return self.z < c
+        if self.z < c:
+            return True
+        elif self.z == c:
+            if self.y < b:
+                return True
+            elif self.y == b:
+                return self.x < a
+            else:
+                return False
+        else:
+            return False
 
     def get_position(self):
         return self.x, self.y, self.z
@@ -56,6 +66,4 @@ class Space:
             for y in self.legal_y:
                 for z in self.legal_z:
                     points.add(point(x=x, y=y, z=z))
-
         return points
-

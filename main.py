@@ -1,5 +1,4 @@
 import math
-
 import numpy as np
 from ortools.linear_solver import pywraplp
 from ortools.sat.python import cp_model
@@ -15,8 +14,9 @@ from methods import get_data
 def box_rotation(boxes, N):
     new_boxes = list()
     for b in boxes[:N]:
+        # width / height / depth
         new_boxes.append([b[0], b[1], b[2]])
-        new_boxes.append([b[2], b[1], b[0]])
+        new_boxes.append([b[0], b[1], b[2]])
     return new_boxes
 
 
@@ -51,7 +51,6 @@ def check_correctness(solver, x, y, z, v, V, W, H, D, data):
         for w in range(data['width'][v[i]]):
             for h in range(data['height'][v[i]]):
                 for d in range(data['depth'][v[i]]):
-                    # print(px, py, pz, data['width'][v[i]], data['height'][v[i]], data['depth'][v[i]])
                     if s[px + d][py + w][pz + h] != -1:
                         print("It's incorrect!")
                     else:
@@ -95,9 +94,7 @@ def resolve(file_path):
     outer_objective.SetMaximization()
 
     while True:
-
         v = {}  # subset of U
-
         V = 0  # the number of selected boxes in the outer layer
         outer_status = outer.Solve()
         if outer_status == pywraplp.Solver.OPTIMAL:
@@ -119,9 +116,9 @@ def resolve(file_path):
 
         # every box should be totally in the space
         for i in range(V):
-            y[i] = inner.NewIntVar(0, W - data['width'][v[i]], 'x[%i]' % i)
-            z[i] = inner.NewIntVar(0, H - data['height'][v[i]], 'y[%i]' % i)
-            x[i] = inner.NewIntVar(0, D - data['depth'][v[i]], 'z[%i]' % i)
+            y[i] = inner.NewIntVar(0, W - data['width'][v[i]], 'y[%i]' % i)
+            z[i] = inner.NewIntVar(0, H - data['height'][v[i]], 'z[%i]' % i)
+            x[i] = inner.NewIntVar(0, D - data['depth'][v[i]], 'x[%i]' % i)
             for j in range(i + 1, V):
                 for k in range(6):
                     b[i][j].append(inner.NewBoolVar('b[%i][%i][%i]' % (i, j, k)))
@@ -136,13 +133,18 @@ def resolve(file_path):
                 inner.Add(z[j] + data['height'][v[j]] - z[i] <= 0).OnlyEnforceIf(b[i][j][5])
                 inner.AddBoolOr(b[i][j])
 
+        s = x[0]
+        for i in range(1, V):
+            s = s + x[i]
+        for i in range(V):
+            s = s + y[i] + z[i]
+
+        inner.Minimize(s)
+
         inner_solver = cp_model.CpSolver()
 
         # Solve.
         inner_status = inner_solver.Solve(inner)
-
-        # running_time += inner_solver.WallTime()
-        # inner returns in seconds, but outer returns in milliseconds
 
         if inner_solver.StatusName(inner_status) == 'INFEASIBLE':
             print('Outer objective value =', outer.Objective().Value())

@@ -1,0 +1,5 @@
+box_id,width,height,depth,x,y,z
+0,14,10,7,7,0,0
+3,14,11,7,0,0,0
+box_a,box_b,satisfied_constraint
+0,3,1
