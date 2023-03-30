@@ -11,13 +11,13 @@ from methods import get_data
 ###
 
 
-def box_rotation(boxes, N):
-    new_boxes = list()
-    for b in boxes[:N]:
-        # width / height / depth
-        new_boxes.append([b[0], b[1], b[2]])
-        new_boxes.append([b[0], b[1], b[2]])
-    return new_boxes
+# def box_rotation(boxes, N):
+#     new_boxes = list()
+#     for b in boxes[:N]:
+#         # width / height / depth
+#         new_boxes.append([b[0], b[1], b[2]])
+#         new_boxes.append([b[0], b[1], b[2]])
+#     return new_boxes
 
 
 def print_solution(solver, x, y, z, b, V, v, data, file_path):
@@ -63,13 +63,13 @@ def resolve(file_path):
 
     N, W, H, D, boxes = get_data(file_path)
 
-    boxes = box_rotation(boxes, N)
-    N = len(boxes)
+    # boxes = box_rotation(boxes, N)
+    # N = len(boxes)
 
     data = {
-        'width': [box[0] for box in boxes],
-        'height': [box[1] for box in boxes],
-        'depth': [box[2] for box in boxes],
+        'width': [box.get_width() for box in boxes],
+        'height': [box.get_height() for box in boxes],
+        'depth': [box.get_depth() for box in boxes],
     }
 
     outer = pywraplp.Solver.CreateSolver('SCIP')
@@ -83,10 +83,10 @@ def resolve(file_path):
     outer_constraint = outer.RowConstraint(0, W * H * D, '')
     for i in range(N):
         outer_constraint.SetCoefficient(u[i], data['width'][i] * data['height'][i] * data['depth'][i])
-    for i in range(0, N, 2):
-        outer_constraint = outer.RowConstraint(0, 1, '')
-        outer_constraint.SetCoefficient(u[i], 1)
-        outer_constraint.SetCoefficient(u[i + 1], 1)
+    # for i in range(0, N, 2):  # here for rotation, if we don't consider it, here will be muted
+    #     outer_constraint = outer.RowConstraint(0, 1, '')
+    #     outer_constraint.SetCoefficient(u[i], 1)
+    #     outer_constraint.SetCoefficient(u[i + 1], 1)
 
     outer_objective = outer.Objective()
     for i in range(N):
@@ -116,9 +116,10 @@ def resolve(file_path):
 
         # every box should be totally in the space
         for i in range(V):
+            x[i] = inner.NewIntVar(0, D - data['depth'][v[i]], 'x[%i]' % i)
             y[i] = inner.NewIntVar(0, W - data['width'][v[i]], 'y[%i]' % i)
             z[i] = inner.NewIntVar(0, H - data['height'][v[i]], 'z[%i]' % i)
-            x[i] = inner.NewIntVar(0, D - data['depth'][v[i]], 'x[%i]' % i)
+
             for j in range(i + 1, V):
                 for k in range(6):
                     b[i][j].append(inner.NewBoolVar('b[%i][%i][%i]' % (i, j, k)))
@@ -133,13 +134,13 @@ def resolve(file_path):
                 inner.Add(z[j] + data['height'][v[j]] - z[i] <= 0).OnlyEnforceIf(b[i][j][5])
                 inner.AddBoolOr(b[i][j])
 
-        s = x[0]
-        for i in range(1, V):
-            s = s + x[i]
-        for i in range(V):
-            s = s + y[i] + z[i]
-
-        inner.Minimize(s)
+        # here for minimize the location position
+        # s = x[0]
+        # for i in range(1, V):
+        #     s = s + x[i]
+        # for i in range(V):
+        #     s = s + y[i] + z[i]
+        # inner.Minimize(s)
 
         inner_solver = cp_model.CpSolver()
 
@@ -163,7 +164,7 @@ def resolve(file_path):
 
 
 def main():
-    resolve("Try\\" + "1.csv")
+    resolve("Data\\" + "0.csv")
 
 
 if __name__ == '__main__':

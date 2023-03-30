@@ -51,8 +51,8 @@ class Box(Cube):
         self.rotated = False
 
     def __repr__(self):
-        return 'Box (with depth = %i, width = %i, height = %i) is placed at (%i, %i, %i)' % \
-            (self.depth, self.width, self.height, self.x, self.y, self.z)
+        return 'Box with depth = %i, width = %i, height = %i' % \
+            (self.depth, self.width, self.height)
 
     # def __lt__(self, other):
     #     a, b, c = other.get_position()
