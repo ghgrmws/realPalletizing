@@ -1,4 +1,7 @@
+import os
 from collections import namedtuple
+
+import numpy as np
 
 point = namedtuple('point', ('x', 'y', 'z'))
 
@@ -28,6 +31,9 @@ class Cube:
     def get_height(self):
         return self.height
 
+    def get_volume(self):
+        return self.volume
+
     def set_(self, d, w, h):
         self.depth = d
         self.width = w
@@ -36,43 +42,75 @@ class Cube:
 
 
 class Box(Cube):
-    def __init__(self, d, w, h, x, y, z):
+    def __init__(self, d, w, h):
         super().__init__(d, w, h)
-        self.x = x
-        self.y = y
-        self.z = z
+        self.rotated = False
 
     def __repr__(self):
         return 'Box (with depth = %i, width = %i, height = %i) is placed at (%i, %i, %i)' % \
             (self.depth, self.width, self.height, self.x, self.y, self.z)
 
-    def __lt__(self, other):
-        a, b, c = other.get_position()
-        if self.z < c:
-            return True
-        elif self.z == c:
-            if self.y < b:
-                return True
-            elif self.y == b:
-                return self.x < a
-            else:
-                return False
-        else:
-            return False
+    # def __lt__(self, other):
+    #     a, b, c = other.get_position()
+    #     if self.z < c:
+    #         return True
+    #     elif self.z == c:
+    #         if self.y < b:
+    #             return True
+    #         elif self.y == b:
+    #             return self.x < a
+    #         else:
+    #             return False
+    #     else:
+    #         return False
 
-    def get_position(self):
-        return point(x=self.x, y=self.y, z=self.z)
+    # def get_position(self):
+    #     return point(x=self.x, y=self.y, z=self.z)
 
     def rotate(self):  # just support horizontal 90° rotation
-        if self.width == self.depth:
-            return False
-        else:
-            t = self.width
-            self.width = self.depth
-            self.depth = t
-            return self
+        self.rotated = False if self.rotated else True
+        t = self.width
+        self.width = self.depth
+        self.depth = t
+        return self.rotated
 
-    def set_position(self, x, y, z):
+    # def set_position(self, p):
+    #     self.x = p.x
+    #     self.y = p.y
+    #     self.z = p.z
+
+
+class Coordinate:
+    def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
+        self.cod = np.zeros((x, y, z))
+
+    def show_legal_corners(self, box):
+        d = box.get_depth()
+        w = box.get_width()
+        h = box.get_height()
+
+        xy = [[0 for i in range(self.y)] for j in range(self.x)]
+        for i in range(self.x):
+            for j in range(self.y):
+                cur = self.z
+                while self.cod[i][j][cur - 1] == 0:
+                    cur -= 1
+                    if cur == 0:
+                        break
+                xy[i][j] = cur
+        ps = list()
+        for i in range(self.x):
+            for j in range(self.y):
+                if (i == 0 or xy[i - 1][j] > xy[i][j]) and (j == 0 or xy[i][j - 1] > xy[i][j]) \
+                        and xy[i][j] + h <= self.z and i + d <= self.x and j + w <= self.y:
+                    ps.append(point(x=i, y=j, z=xy[i][j]))
+        return ps
+
+    def place_box(self, p, box):
+        for i in range(p.x, p.x + box.get_depth()):
+            for j in range(p.y, p.y + box.get_width()):
+                for k in range(p.z, p.z + box.get_height()):
+                    self.cod[i][j][k] = 1

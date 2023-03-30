@@ -22,7 +22,7 @@ Type = {
 
 
 class Instance_Generator:
-    def __init__(self, W, H, D, N, k):
+    def __init__(self, D, W, H, N, k):
         self.Width = W
         self.Height = H
         self.Depth = D
@@ -31,7 +31,7 @@ class Instance_Generator:
 
     def save_in_file(self, file_name):
         with open(file_name, "w") as f:
-            f.write(str(self.Number) + "," + str(self.Width) + "," + str(self.Height) + "," + str(self.Depth) + "\n")
+            f.write(str(self.Number) + "," + str(self.Depth) + "," + str(self.Width) + "," + str(self.Height) + "\n")
             for i in range(self.Number):
                 f.write(self.make_a_box())
 
@@ -47,7 +47,7 @@ class Instance_Generator:
         w = int(random.uniform(max(1, t[0] * self.Width), t[1] * self.Width))
         h = int(random.uniform(max(1, t[2] * self.Height), t[3] * self.Height))
         d = int(random.uniform(max(1, t[4] * self.Depth), t[5] * self.Depth))
-        return str(w) + "," + str(h) + "," + str(d) + "\n"
+        return str(d) + "," + str(w) + "," + str(h) + "\n"
 
 
 def generate_data(dirs):
@@ -111,13 +111,14 @@ def get_data(file_path):
         reader = csv.reader(f)
         headers = next(reader)
         N = int(headers[0])
-        W = int(headers[1])
-        H = int(headers[2])
-        D = int(headers[3])
+        D = int(headers[1])
+        W = int(headers[2])
+        H = int(headers[3])
         boxes = list()
         for r in reader:
-            boxes.append(list(map(int, r)))
-    return N, W, H, D, boxes
+            s = list(map(int, r))
+            boxes.append(Box(s[0], s[1], s[2]))
+    return N, D, W, H, boxes
 
 
 def cutting_generator(W, H, D, extra_rate, lower_bound):
