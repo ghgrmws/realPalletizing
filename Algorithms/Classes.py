@@ -6,6 +6,10 @@ import numpy as np
 point = namedtuple('point', ('x', 'y', 'z'))
 
 
+def manh_dist(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
+
+
 class Cube:
     def __init__(self, d, w, h):
         self.depth = d      # x
@@ -87,7 +91,7 @@ class Coordinate:
         self.z = z
         self.cod = np.zeros((x, y, z))
 
-    def show_legal_corners(self, box):
+    def get_place_position(self, box):
         d = box.get_depth()
         w = box.get_width()
         h = box.get_height()
@@ -101,15 +105,32 @@ class Coordinate:
                     if cur == 0:
                         break
                 xy[i][j] = cur
-        ps = list()
+
+        max_dist = 0
+        p = None
         for i in range(self.x):
             for j in range(self.y):
                 if (i == 0 or xy[i - 1][j] > xy[i][j]) and (j == 0 or xy[i][j - 1] > xy[i][j]) \
                         and xy[i][j] + h <= self.z and i + d <= self.x and j + w <= self.y:
-                    ps.append(point(x=i, y=j, z=xy[i][j]))
-        return ps
+                    if self.no_conflict(i, j, xy[i][j], d, w, h):
+                        dist = manh_dist((i + d, j + w, xy[i][j] + h), (self.x, self.y, self.z))
+                        if dist > max_dist:
+                            p = point(x=i, y=j, z=xy[i][j])
+                            max_dist = dist
+        return p
 
-    def place_box(self, p, box):
+    def no_conflict(self, x, y, z, d, w, h):
+        for i in range(x, x + d):
+            for j in range(y, y + w):
+                for k in range(z, z + h):
+                    if self.cod[i][j][k] == 1:
+                        return False
+        return True
+
+    def place_box(self, box):
+        p = self.get_place_position(box)
+        if p is None:
+            return False
         for i in range(p.x, p.x + box.get_depth()):
             for j in range(p.y, p.y + box.get_width()):
                 for k in range(p.z, p.z + box.get_height()):
