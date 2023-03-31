@@ -89,49 +89,44 @@ class Coordinate:
         self.x = x
         self.y = y
         self.z = z
-        self.cod = np.zeros((x, y, z))
+        self.xy = np.array([[0 for j in range(y)] for i in range(x)])
+        # self.cod = np.zeros((x, y, z))
+
+    def place_box(self, box):
+        p = self.get_place_position(box)
+        if p is None:
+            return False
+        else:
+            for i in range(p.x, p.x + box.get_depth()):
+                for j in range(p.y, p.y + box.get_width()):
+                    self.xy[i][j] = p.z + box.get_height()
+                    # for k in range(p.z, p.z + box.get_height()):
+                    #     self.cod[i][j][k] = 1
 
     def get_place_position(self, box):
         d = box.get_depth()
         w = box.get_width()
         h = box.get_height()
 
-        xy = [[0 for i in range(self.y)] for j in range(self.x)]
-        for i in range(self.x):
-            for j in range(self.y):
-                cur = self.z
-                while self.cod[i][j][cur - 1] == 0:
-                    cur -= 1
-                    if cur == 0:
-                        break
-                xy[i][j] = cur
-
         max_dist = 0
         p = None
         for i in range(self.x):
             for j in range(self.y):
-                if (i == 0 or xy[i - 1][j] > xy[i][j]) and (j == 0 or xy[i][j - 1] > xy[i][j]) \
-                        and xy[i][j] + h <= self.z and i + d <= self.x and j + w <= self.y:
-                    if self.no_conflict(i, j, xy[i][j], d, w, h):
-                        dist = manh_dist((i + d, j + w, xy[i][j] + h), (self.x, self.y, self.z))
+                if (i == 0 or self.xy[i - 1][j] > self.xy[i][j]) and (j == 0 or self.xy[i][j - 1] > self.xy[i][j]) \
+                        and self.xy[i][j] + h <= self.z and i + d <= self.x and j + w <= self.y:
+                    if self.stable(i, j, d, w, h):
+                        dist = manh_dist((i + d, j + w, self.xy[i][j] + h), (self.x, self.y, self.z))
                         if dist > max_dist:
-                            p = point(x=i, y=j, z=xy[i][j])
+                            p = point(x=i, y=j, z=self.xy[i][j])
                             max_dist = dist
         return p
 
-    def no_conflict(self, x, y, z, d, w, h):
-        for i in range(x, x + d):
-            for j in range(y, y + w):
-                for k in range(z, z + h):
-                    if self.cod[i][j][k] == 1:
-                        return False
+    def stable(self, x, y, d, w, h):
+        k = np.max(self.xy)
+        if k + h > self.z:
+            return False
+
+
+
         return True
 
-    def place_box(self, box):
-        p = self.get_place_position(box)
-        if p is None:
-            return False
-        for i in range(p.x, p.x + box.get_depth()):
-            for j in range(p.y, p.y + box.get_width()):
-                for k in range(p.z, p.z + box.get_height()):
-                    self.cod[i][j][k] = 1
