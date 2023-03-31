@@ -1,9 +1,9 @@
 from collections import namedtuple
 from datetime import datetime
 import numpy as np
-from Algorithms import GeneticAlgorithm
+from Algorithms.GeneticAlgorithm import Genetic
 from Algorithms.Classes import Coordinate
-from methods import propose_strategy, get_data, generate_data
+from methods import get_data, generate_data
 
 point = namedtuple('point', ('x', 'y', 'z'))
 
@@ -22,11 +22,11 @@ def test():
 def run():
     start = datetime.now()
 
-    N, D, W, H, boxes = get_data("Try\\1.csv")
-    GeneticAlgorithm.solve(D, W, H, boxes)
-
+    N, D, W, H, boxes = get_data("Data\\1.csv")
+    ga = Genetic(D, W, H, boxes)
+    print('The utilization is %f' % ga.solve())
     print(datetime.now() - start)
-
+    print(ga.check())
     return
 
 

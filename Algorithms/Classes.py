@@ -90,6 +90,7 @@ class Coordinate:
         self.y = y
         self.z = z
         self.xy = np.array([[0 for j in range(y)] for i in range(x)])
+        self.positions = list()
         # self.cod = np.zeros((x, y, z))
 
     def place_box(self, box):
@@ -97,11 +98,14 @@ class Coordinate:
         if p is None:
             return False
         else:
+            self.positions.append(p)
             for i in range(p.x, p.x + box.get_depth()):
                 for j in range(p.y, p.y + box.get_width()):
                     self.xy[i][j] = p.z + box.get_height()
-                    # for k in range(p.z, p.z + box.get_height()):
-                    #     self.cod[i][j][k] = 1
+            return True
+
+    def get_positions(self):
+        return self.positions
 
     def get_place_position(self, box):
         d = box.get_depth()
@@ -122,11 +126,12 @@ class Coordinate:
         return p
 
     def stable(self, x, y, d, w, h):
-        k = np.max(self.xy)
+        # k = np.max(self.xy[x:x+d][y:y+w])
+        k = 0
+        for i in range(x, x + d):
+            for j in range(y, y + w):
+                k = max(k, self.xy[i][j])
         if k + h > self.z:
             return False
-
-
-
         return True
 
