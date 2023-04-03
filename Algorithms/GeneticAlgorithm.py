@@ -27,17 +27,22 @@ class Genetic:
         return self.utilization
 
     def check(self):
-        s = -np.ones((self.D, self.W, self.H))
-        NB = len(self.placed_boxes)
-        for i in range(NB):
-            p = self.positions[i]
-            b = self.placed_boxes[i]
-            for d in range(b.get_depth()):
-                for w in range(b.get_width()):
-                    for h in range(b.get_height()):
-                        if s[p.x + d][p.y + w][p.z + h] != -1:
-                            print(s[p.x + d][p.y + w][p.z + h], i)
-                            return False
-                        else:
-                            s[p.x + d][p.y + w][p.z + h] = i
+        num_box = len(self.placed_boxes)
+        for i in range(num_box):
+            for j in range(i + 1, num_box):
+                ap = self.positions[i]
+                ab = self.placed_boxes[i]
+                bp = self.positions[j]
+                bb = self.placed_boxes[j]
+                if ap.x + ab.get_depth() <= bp.x or \
+                        bp.x + bb.get_depth() <= ap.x or \
+                        ap.y + ab.get_width() <= bp.y or \
+                        bp.y + bb.get_width() <= ap.y or \
+                        ap.z + ab.get_height() <= bp.z or \
+                        bp.z + bb.get_height() <= ap.z:
+                    continue
+                else:
+                    print(ap, ab)
+                    print(bp, bb)
+                    return False
         return True

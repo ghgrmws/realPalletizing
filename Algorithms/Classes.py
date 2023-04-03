@@ -10,12 +10,13 @@ def manh_dist(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
 
 
-class Cube:
+class Box:
     def __init__(self, d, w, h):
-        self.depth = d      # x
-        self.width = w      # y
-        self.height = h     # z
+        self.depth = d  # x
+        self.width = w  # y
+        self.height = h  # z
         self.volume = d * w * h
+        self.rotated = False
 
     def set_depth(self, d):
         self.depth = d
@@ -44,33 +45,6 @@ class Cube:
         self.height = h
         self.volume = d * w * h
 
-
-class Box(Cube):
-    def __init__(self, d, w, h):
-        super().__init__(d, w, h)
-        self.rotated = False
-
-    def __repr__(self):
-        return 'Box with depth = %i, width = %i, height = %i' % \
-            (self.depth, self.width, self.height)
-
-    # def __lt__(self, other):
-    #     a, b, c = other.get_position()
-    #     if self.z < c:
-    #         return True
-    #     elif self.z == c:
-    #         if self.y < b:
-    #             return True
-    #         elif self.y == b:
-    #             return self.x < a
-    #         else:
-    #             return False
-    #     else:
-    #         return False
-
-    # def get_position(self):
-    #     return point(x=self.x, y=self.y, z=self.z)
-
     def rotate(self):  # just support horizontal 90° rotation
         self.rotated = False if self.rotated else True
         t = self.width
@@ -78,10 +52,41 @@ class Box(Cube):
         self.depth = t
         return self.rotated
 
-    # def set_position(self, p):
-    #     self.x = p.x
-    #     self.y = p.y
-    #     self.z = p.z
+    def __repr__(self):
+        return 'Box with depth = %i, width = %i, height = %i' % \
+            (self.depth, self.width, self.height)
+
+
+# class Space:
+#     def __init__(self, pa, pb):
+#         self.lbb = pa
+#         self.rft = pb
+#         self.volume = (pb.x - pa.x) * (pb.y - pa.y) * (pb.z - pa.z)
+#
+#     def __lt__(self, other):
+#         return self.lbb < other.get_lbb()
+#
+#     def get_lbb(self):  # left back bottom
+#         return self.lbb
+#
+#     def get_rft(self):  # right front top
+#         return self.rft
+#
+#     def get_volume(self):
+#         return self.volume
+#
+#     def intersection(self, other):
+#         opa = other.get_lbb()
+#         opb = other.get_rft()
+#         if self.rft.x < opa.x or self.lbb.x > opb.x or \
+#                 self.rft.y < opa.y or self.lbb.y > opb.y or \
+#                 self.rft.z < opa.z or self.lbb.z > opb.z:
+#             return False
+#         else:
+#             lbb = point(x=max(self.lbb.x, opa.x), y=max(self.lbb.y, opa.y), z=max(self.lbb.z, opa.z))
+#             rft = point(x=min(self.rft.x, opb.x), y=min(self.rft.y, opb.y), z=min(self.rft.z, opb.z))
+#
+#             return True
 
 
 class Coordinate:
@@ -111,26 +116,33 @@ class Coordinate:
         w = box.get_width()
         h = box.get_height()
 
-        max_dist = 0
+        # p = None
+        # for z in range(self.z - h):
+        #     ps = set()
+        #     for i in range(self.x - d):
+        #         j = self.y - 1
+        #         while True:
+        #             break
+
         p = None
-        for i in range(self.x):
-            for j in range(self.y):
-                if (i == 0 or self.xy[i - 1][j] > self.xy[i][j]) and (j == 0 or self.xy[i][j - 1] > self.xy[i][j]) \
-                        and self.xy[i][j] + h <= self.z and i + d <= self.x and j + w <= self.y:
-                    if self.stable(i, j, d, w, h):
-                        dist = manh_dist((i + d, j + w, self.xy[i][j] + h), (self.x, self.y, self.z))
-                        if dist > max_dist:
-                            p = point(x=i, y=j, z=self.xy[i][j])
-                            max_dist = dist
+        max_dist = 0
+        for i in range(self.x - d):
+            for j in range(self.y - w):
+                z = self.stable(i, j, d, w, h)
+                if z is not False:
+                    dist = manh_dist((i + d, j + w, z + h), (self.x, self.y, self.z))
+                    if dist > max_dist:
+                        p = point(x=i, y=j, z=z)
+                        max_dist = dist
         return p
 
     def stable(self, x, y, d, w, h):
-        # k = np.max(self.xy[x:x+d][y:y+w])
-        k = 0
+        # legal_height = np.max(self.xy[x:x+d][y:y+w])
+        legal_height = 0
         for i in range(x, x + d):
             for j in range(y, y + w):
-                k = max(k, self.xy[i][j])
-        if k + h > self.z:
+                k = max(legal_height, self.xy[i][j])
+        if legal_height + h > self.z:
             return False
-        return True
-
+        else:
+            return legal_height
