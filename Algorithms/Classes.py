@@ -57,36 +57,50 @@ class Box:
             (self.depth, self.width, self.height)
 
 
-# class Space:
-#     def __init__(self, pa, pb):
-#         self.lbb = pa
-#         self.rft = pb
-#         self.volume = (pb.x - pa.x) * (pb.y - pa.y) * (pb.z - pa.z)
-#
-#     def __lt__(self, other):
-#         return self.lbb < other.get_lbb()
-#
-#     def get_lbb(self):  # left back bottom
-#         return self.lbb
-#
-#     def get_rft(self):  # right front top
-#         return self.rft
-#
-#     def get_volume(self):
-#         return self.volume
-#
-#     def intersection(self, other):
-#         opa = other.get_lbb()
-#         opb = other.get_rft()
-#         if self.rft.x < opa.x or self.lbb.x > opb.x or \
-#                 self.rft.y < opa.y or self.lbb.y > opb.y or \
-#                 self.rft.z < opa.z or self.lbb.z > opb.z:
-#             return False
-#         else:
-#             lbb = point(x=max(self.lbb.x, opa.x), y=max(self.lbb.y, opa.y), z=max(self.lbb.z, opa.z))
-#             rft = point(x=min(self.rft.x, opb.x), y=min(self.rft.y, opb.y), z=min(self.rft.z, opb.z))
-#
-#             return True
+class Space:
+    def __init__(self, pa, pb):
+        self.lbb = pa
+        self.rft = pb
+        self.volume = (pb.x - pa.x) * (pb.y - pa.y) * (pb.z - pa.z)
+
+    def __lt__(self, other):
+        return self.lbb < other.get_lbb()
+
+    def get_lbb(self):  # left back bottom
+        return self.lbb
+
+    def get_rft(self):  # right front top
+        return self.rft
+
+    def get_volume(self):
+        return self.volume
+
+    def intersection(self, other):
+        opa = other.get_lbb()
+        opb = other.get_rft()
+        if self.rft.x < opa.x or self.lbb.x > opb.x or \
+                self.rft.y < opa.y or self.lbb.y > opb.y or \
+                self.rft.z < opa.z or self.lbb.z > opb.z:
+            return False
+        else:
+            lbb = point(x=max(self.lbb.x, opa.x), y=max(self.lbb.y, opa.y), z=max(self.lbb.z, opa.z))
+            rft = point(x=min(self.rft.x, opb.x), y=min(self.rft.y, opb.y), z=min(self.rft.z, opb.z))
+            xx = [self.lbb.x, self.rft.x, lbb.x, rft.x]
+            xx.sort()
+            yy = [self.lbb.y, self.rft.y, lbb.y, rft.y]
+            yy.sort()
+            zz = [self.lbb.z, self.rft.z, lbb.z, rft.z]
+            zz.sort()
+
+            sub_spaces = list()
+            for i in range(1, 4):
+                for j in range(1, 4):
+                    for k in range(1, 4):
+                        new_lbb = point(x=min(xx[i], xx[i - 1]), y=min(yy[j], yy[j - 1]), z=min(zz[k], zz[k - 1]))
+                        new_rft = point(x=max(xx[i], xx[i - 1]), y=max(yy[j], yy[j - 1]), z=max(zz[k], zz[k - 1]))
+                        if new_rft > new_lbb:
+                            sub_spaces.append(Space(new_lbb, new_rft))
+            return sub_spaces
 
 
 class Coordinate:
