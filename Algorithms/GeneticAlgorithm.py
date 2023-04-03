@@ -32,10 +32,11 @@ class Genetic:
         for i in range(NB):
             p = self.positions[i]
             b = self.placed_boxes[i]
-            for w in range(b.get_width()):
-                for h in range(b.get_width()):
-                    for d in range(b.get_width()):
+            for d in range(b.get_depth()):
+                for w in range(b.get_width()):
+                    for h in range(b.get_height()):
                         if s[p.x + d][p.y + w][p.z + h] != -1:
+                            print(s[p.x + d][p.y + w][p.z + h], i)
                             return False
                         else:
                             s[p.x + d][p.y + w][p.z + h] = i

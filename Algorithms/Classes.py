@@ -91,7 +91,6 @@ class Coordinate:
         self.z = z
         self.xy = np.array([[0 for j in range(y)] for i in range(x)])
         self.positions = list()
-        # self.cod = np.zeros((x, y, z))
 
     def place_box(self, box):
         p = self.get_place_position(box)
