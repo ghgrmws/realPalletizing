@@ -1,4 +1,4 @@
-import os
+import treelib
 from collections import namedtuple
 
 import numpy as np
@@ -69,7 +69,7 @@ class Space:
         self.volume = (pb.x - pa.x) * (pb.y - pa.y) * (pb.z - pa.z)
 
     def __lt__(self, other):
-        return self.lbb < other.get_lbb()
+        return self.volume < other.volume()
 
     def __repr__(self):
         return '(%i, %i, %i) -> (%i, %i, %i)' % (self.lbb.x, self.lbb.y, self.lbb.z, self.rft.x, self.rft.y, self.rft.z)
@@ -126,6 +126,8 @@ class Coordinate:
         self.y = y
         self.z = z
         self.xy = np.array([[0 for j in range(y)] for i in range(x)])
+        self.space_tree = treelib.Tree()
+        self.space_tree.create_node(Space(point(x=0, y=0, z=0), point(x=x, y=y, z=z)), self.space_tree.size() + 1)
         self.positions = list()
 
     def place_box(self, box):
@@ -147,25 +149,23 @@ class Coordinate:
         w = box.get_width()
         h = box.get_height()
 
-        # p = None
-        # for z in range(self.z - h):
-        #     ps = set()
-        #     for i in range(self.x - d):
-        #         j = self.y - 1
-        #         while True:
-        #             break
-
-        p = None
+        selected_space = None
         max_dist = 0
-        for i in range(self.x - d):
-            for j in range(self.y - w):
-                z = self.stable(i, j, d, w, h)
-                if z is not False:
-                    dist = manh_dist((i + d, j + w, z + h), (self.x, self.y, self.z))
-                    if dist > max_dist:
-                        p = point(x=i, y=j, z=z)
-                        max_dist = dist
-        return p
+        for space in self.spaces:
+
+
+        # with coordinate
+        # p = None
+        # max_dist = 0
+        # for i in range(self.x - d):
+        #     for j in range(self.y - w):
+        #         z = self.stable(i, j, d, w, h)
+        #         if z is not False:
+        #             dist = manh_dist((i + d, j + w, z + h), (self.x, self.y, self.z))
+        #             if dist > max_dist:
+        #                 p = point(x=i, y=j, z=z)
+        #                 max_dist = dist
+        return selected_space
 
     def stable(self, x, y, d, w, h):
         # legal_height = np.max(self.xy[x:x+d][y:y+w])
