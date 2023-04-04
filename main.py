@@ -164,7 +164,7 @@ def resolve(file_path):
 
 
 def main():
-    resolve("Data\\" + "0.csv.info")
+    resolve("Data\\" + "0.csv")
 
 
 if __name__ == '__main__':

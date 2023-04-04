@@ -4,10 +4,7 @@ import os.path
 import random
 from queue import PriorityQueue
 
-import numpy as np
-
 from Algorithms.Classes import Box
-
 
 Type = {
     "1": [0, 1/2, 2/3, 1, 2/3, 1],

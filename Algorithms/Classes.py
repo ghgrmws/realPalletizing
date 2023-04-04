@@ -59,12 +59,20 @@ class Box:
 
 class Space:
     def __init__(self, pa, pb):
+        try:
+            if not (pb.x > pa.x and pb.y > pa.y and pb.z > pa.z):
+                raise Exception("RuntimeError")
+        except RuntimeError:
+            print("Illegal constructive function parameter in class Space.")
         self.lbb = pa
         self.rft = pb
         self.volume = (pb.x - pa.x) * (pb.y - pa.y) * (pb.z - pa.z)
 
     def __lt__(self, other):
         return self.lbb < other.get_lbb()
+
+    def __repr__(self):
+        return '(%i, %i, %i) -> (%i, %i, %i)' % (self.lbb.x, self.lbb.y, self.lbb.z, self.rft.x, self.rft.y, self.rft.z)
 
     def get_lbb(self):  # left back bottom
         return self.lbb
@@ -78,29 +86,38 @@ class Space:
     def intersection(self, other):
         opa = other.get_lbb()
         opb = other.get_rft()
-        if self.rft.x < opa.x or self.lbb.x > opb.x or \
-                self.rft.y < opa.y or self.lbb.y > opb.y or \
-                self.rft.z < opa.z or self.lbb.z > opb.z:
-            return False
+        if self.rft.x <= opa.x or self.lbb.x >= opb.x or \
+                self.rft.y <= opa.y or self.lbb.y >= opb.y or \
+                self.rft.z <= opa.z or self.lbb.z >= opb.z:
+            return []
         else:
             lbb = point(x=max(self.lbb.x, opa.x), y=max(self.lbb.y, opa.y), z=max(self.lbb.z, opa.z))
             rft = point(x=min(self.rft.x, opb.x), y=min(self.rft.y, opb.y), z=min(self.rft.z, opb.z))
-            xx = [self.lbb.x, self.rft.x, lbb.x, rft.x]
-            xx.sort()
-            yy = [self.lbb.y, self.rft.y, lbb.y, rft.y]
-            yy.sort()
-            zz = [self.lbb.z, self.rft.z, lbb.z, rft.z]
-            zz.sort()
+            return self.cut_space(Space(lbb, rft))
 
-            sub_spaces = list()
-            for i in range(1, 4):
-                for j in range(1, 4):
-                    for k in range(1, 4):
-                        new_lbb = point(x=min(xx[i], xx[i - 1]), y=min(yy[j], yy[j - 1]), z=min(zz[k], zz[k - 1]))
-                        new_rft = point(x=max(xx[i], xx[i - 1]), y=max(yy[j], yy[j - 1]), z=max(zz[k], zz[k - 1]))
-                        if new_rft > new_lbb:
-                            sub_spaces.append(Space(new_lbb, new_rft))
-            return sub_spaces
+    def cut_space(self, ite):
+        x = [self.lbb.x, self.rft.x, ite.get_lbb().x, ite.get_rft().x]
+        y = [self.lbb.y, self.rft.y, ite.get_lbb().y, ite.get_rft().y]
+        z = [self.lbb.z, self.rft.z, ite.get_lbb().z, ite.get_rft().z]
+        x.sort()
+        y.sort()
+        z.sort()
+
+        pairs = [[point(x=x[0], y=y[0], z=z[0]), point(x=x[1], y=y[3], z=z[3])],
+                 [point(x=x[2], y=y[0], z=z[0]), point(x=x[3], y=y[3], z=z[3])],
+                 [point(x=x[0], y=y[0], z=z[0]), point(x=x[3], y=y[1], z=z[3])],
+                 [point(x=x[0], y=y[2], z=z[0]), point(x=x[3], y=y[3], z=z[3])],
+                 [point(x=x[0], y=y[0], z=z[0]), point(x=x[3], y=y[3], z=z[1])],
+                 [point(x=x[0], y=y[0], z=z[2]), point(x=x[3], y=y[3], z=z[3])]
+                 ]
+
+        sub_spaces = list()
+        for pair in pairs:
+            a = pair[0]
+            b = pair[1]
+            if b.x > a.x and b.y > a.y and b.z > a.z:
+                sub_spaces.append(Space(a, b))
+        return sub_spaces
 
 
 class Coordinate:
@@ -155,7 +172,7 @@ class Coordinate:
         legal_height = 0
         for i in range(x, x + d):
             for j in range(y, y + w):
-                k = max(legal_height, self.xy[i][j])
+                legal_height = max(legal_height, self.xy[i][j])
         if legal_height + h > self.z:
             return False
         else:
