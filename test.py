@@ -9,31 +9,7 @@ point = namedtuple('point', ('x', 'y', 'z'))
 
 
 def test():
-    with open("Try\\0.csv", "r") as f:
-        head = f.readline().split(',')
-        D = int(head[0])
-        W = int(head[1])
-        H = int(head[2])
 
-        contents = f.readline().split(', ')
-        data = list()
-        for s in contents:
-            k = 0
-            for c in s:
-                if c == '[' or c == ']':
-                    continue
-                else:
-                    k *= 10
-                    k += int(c)
-            data.append(k)
-    with open("Try/0.csv", "a") as f:
-        f.write('%i,%i,%i' % (D, W, H))
-        for i in range(len(data)):
-            if i % 3:
-                f.write(',')
-            else:
-                f.write('\n')
-            f.write(str(data[i]))
 
 
 def run():
@@ -47,5 +23,5 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
-    # test()
+    # run()
+    test()
