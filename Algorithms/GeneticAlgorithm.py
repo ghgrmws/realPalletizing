@@ -1,3 +1,4 @@
+import random
 from collections import namedtuple
 
 from Algorithms.Classes import Coordinate, Tree, TreeNode, Space
@@ -21,26 +22,60 @@ class Genetic:
         self.positions = list()
         self.utilization = -1
 
-    def solve_with_coordinate(self):
-        space = Coordinate(self.D, self.W, self.H)
-        num_boxes = len(self.all_boxes)
-        seq = [i for i in range(num_boxes)]  # genes value & box id
-        # random.shuffle(seq)
-        v = 0
-        for i in seq:
-            if space.place_box(self.all_boxes[i]):
-                self.placed_boxes.append(self.all_boxes[i])
-                v += self.all_boxes[i].get_volume()
-        self.positions = space.get_positions()
-        self.utilization = v / (self.D * self.W * self.H)
-        return self.utilization
+    # def solve_with_coordinate(self):
+    #     space = Coordinate(self.D, self.W, self.H)
+    #     num_boxes = len(self.all_boxes)
+    #     seq = [i for i in range(num_boxes)]  # genes value & box id
+    #     # random.shuffle(seq)
+    #     v = 0
+    #     for i in seq:
+    #         if space.place_box(self.all_boxes[i]):
+    #             self.placed_boxes.append(self.all_boxes[i])
+    #             v += self.all_boxes[i].get_volume()
+    #     self.positions = space.get_positions()
+    #     self.utilization = v / (self.D * self.W * self.H)
+    #     return self.utilization
 
     def solve(self):
-        seq = [i for i in range(self.num_boxes)]
+        population_size = 10
+        old_chromosomes = list()
+        max_v = 0
+        code = [i for i in range(self.num_boxes)]
+        for i in range(population_size * 2):
+            random.shuffle(code)
+            v = self.decode(code)
+            max_v = max(max_v, v)
+            old_chromosomes.append((v, old_chromosomes))
 
-    def solve_with_tree(self, seq):
+        max_generation = 20
+        generation = 0
+        new_chromosomes = list()
+        while generation < max_generation:
+            for i in range(population_size):
+                a, b = random.sample(old_chromosomes, 2)
+                if a[0] > b[0]:
+                    new_chromosomes.append(a)
+                else:
+                    new_chromosomes.append(b)
+
+            # mutate
+            mute_times = 20
+            for i in range(mute_times):
+                chromosome = random.choice(new_chromosomes)
+                a, b = random.sample(range(self.num_boxes), 2)
+                t = chromosome[1][a]
+                chromosome[1][a] = chromosome[1][b]
+                chromosome[1][b] = t
+                chromosome[0] = self.decode(chromosome[1])
+                max_v = max(max_v, chromosome[0])
+
+            generation += 1
+            print("Generation %i with utilization %f" % (generation, max_v / (self.D * self.W * self.H)))
+
+        return 0
+
+    def decode(self, seq):
         space = Space(point(x=0, y=0, z=0), point(x=self.D, y=self.W, z=self.H))
-        # seq = [i for i in range(num_boxes)]  # genes value & box id
 
         tree = Tree(space)
         v = 0
@@ -65,7 +100,8 @@ class Genetic:
                         selected = j
 
             if selected is not None:
-                lbb = leaves[selected].get_obj().get_lbb()
+                selected_node = leaves[selected]
+                lbb = selected_node.get_obj().get_lbb()
                 box_space = Space(lbb, point(x=lbb.x + d, y=lbb.y + w, z=lbb.z + h))
                 for node in leaves:
                     sp = node.get_obj()
@@ -77,12 +113,9 @@ class Genetic:
                         node.set_children(children)
 
                 self.positions.append(lbb)
-                self.placed_boxes.append(box)
+                self.placed_boxes.append(i)
                 v += self.all_boxes[i].get_volume()
-
-        self.utilization = v / (self.D * self.W * self.H)
-
-        return self.utilization
+        return v
 
     def check(self):
         num_box = len(self.placed_boxes)

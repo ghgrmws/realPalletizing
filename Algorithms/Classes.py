@@ -3,6 +3,9 @@ from collections import namedtuple
 import numpy as np
 
 
+point = namedtuple('point', ('x', 'y', 'z'))
+
+
 class TreeNode:
     def __init__(self, father, obj, children):
         self.father = father
@@ -15,6 +18,9 @@ class TreeNode:
     def get_obj(self):
         return self.obj
 
+    def get_father(self):
+        return self.father
+
     def set_children(self, children):
         self.children = children
 
@@ -23,10 +29,12 @@ class Tree:
     def __init__(self, obj):
         self.root = TreeNode(None, obj, None)
 
-    def get_all_leaves(self):
+    def get_all_leaves(self, node=None):
+        if node is None:
+            node = self.root
         leaves = list()
         q = queue.Queue()
-        q.put(self.root)
+        q.put(node)
         while not q.empty():
             node = q.get()
             children = node.get_children()
@@ -36,9 +44,6 @@ class Tree:
             else:
                 leaves.append(node)
         return leaves
-
-
-point = namedtuple('point', ('x', 'y', 'z'))
 
 
 def manh_dist(a, b):
@@ -196,7 +201,6 @@ class Coordinate:
         return p
 
     def stable(self, x, y, d, w, h):
-        # legal_height = np.max(self.xy[x:x+d][y:y+w])
         legal_height = 0
         for i in range(x, x + d):
             for j in range(y, y + w):
