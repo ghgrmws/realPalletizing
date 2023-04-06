@@ -15,24 +15,27 @@ class TreeNode:
     def get_obj(self):
         return self.obj
 
-    def set_children(self, child):
-        if self.children is not None:
-            self.children.append(child)
-        else:
-            self.children = [child]
+    def set_children(self, children):
+        self.children = children
 
 
 class Tree:
     def __init__(self, obj):
-        self.nodes = list()
-        self.nodes.append(TreeNode(None, obj, None))
-        self.size = 1
-
-        self.leaves = list()
-        self.leaves.append(self.nodes[0])
+        self.root = TreeNode(None, obj, None)
 
     def get_all_leaves(self):
-        return self.leaves
+        leaves = list()
+        q = queue.Queue()
+        q.put(self.root)
+        while not q.empty():
+            node = q.get()
+            children = node.get_children()
+            if children is not None:
+                for child in children:
+                    q.put(child)
+            else:
+                leaves.append(node)
+        return leaves
 
 
 point = namedtuple('point', ('x', 'y', 'z'))

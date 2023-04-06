@@ -16,6 +16,7 @@ class Genetic:
         self.W = W
         self.H = H
         self.all_boxes = boxes
+        self.num_boxes = len(boxes)
         self.placed_boxes = list()
         self.positions = list()
         self.utilization = -1
@@ -34,15 +35,16 @@ class Genetic:
         self.utilization = v / (self.D * self.W * self.H)
         return self.utilization
 
-    def solve_with_tree(self):
+    def solve(self):
+        seq = [i for i in range(self.num_boxes)]
+
+    def solve_with_tree(self, seq):
         space = Space(point(x=0, y=0, z=0), point(x=self.D, y=self.W, z=self.H))
-        num_boxes = len(self.all_boxes)
-        seq = [i for i in range(num_boxes)]  # genes value & box id
+        # seq = [i for i in range(num_boxes)]  # genes value & box id
 
         tree = Tree(space)
-        stop = False
-        v, i = 0, 0
-        while not stop:
+        v = 0
+        for i in seq:
             leaves = tree.get_all_leaves()
             num_leaves = len(leaves)
             box = self.all_boxes[seq[i]]
@@ -51,33 +53,34 @@ class Genetic:
             h = box.get_height()
 
             max_dist = 0
-            selected = 0
-            for i in range(num_leaves):
-                sp = leaves[i].get_obj()
+            selected = None
+            for j in range(num_leaves):
+                sp = leaves[j].get_obj()
                 lbb = sp.get_lbb()
                 rft = sp.get_rft()
                 if rft.x - lbb.x >= d and rft.y - lbb.y >= w and rft.z - lbb.z >= h:
                     dist = manh_dist(point(x=lbb.x + d, y=lbb.y + w, z=lbb.z + h), point(x=self.D, y=self.W, z=self.H))
                     if dist > max_dist:
                         max_dist = dist
-                        selected = i
+                        selected = j
 
-            lbb = leaves[selected].get_obj().get_lbb()
-            box_space = Space(lbb, point(x=lbb.x + d, y=lbb.y + w, z=lbb.z + h))
-            for node in leaves:
-                sp = node.get_obj()
-                sub_spaces = sp.intersection(box_space)
-                if sub_spaces is not None:
-                    children = list()
-                    for sb_ps in sub_spaces:
-                        children.append(TreeNode(node, ))
-                    node.set_children(sub_spaces)
+            if selected is not None:
+                lbb = leaves[selected].get_obj().get_lbb()
+                box_space = Space(lbb, point(x=lbb.x + d, y=lbb.y + w, z=lbb.z + h))
+                for node in leaves:
+                    sp = node.get_obj()
+                    sub_spaces = sp.intersection(box_space)
+                    if sub_spaces is not None:
+                        children = list()
+                        for sb_ps in sub_spaces:
+                            children.append(TreeNode(node, sb_ps, None))
+                        node.set_children(children)
 
-            self.positions.append(lbb)
-            self.placed_boxes.append(box)
-            v += self.all_boxes[i].get_volume()
+                self.positions.append(lbb)
+                self.placed_boxes.append(box)
+                v += self.all_boxes[i].get_volume()
 
-            i += 1
+        self.utilization = v / (self.D * self.W * self.H)
 
         return self.utilization
 

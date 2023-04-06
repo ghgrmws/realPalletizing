@@ -38,12 +38,12 @@ def run():
     start = datetime.now()
     N, D, W, H, boxes = get_data("Try\\0.csv")  # 0.665602
     ga = Genetic(D, W, H, boxes)
-    print('The utilization is %f' % ga.solve())
+    print('The utilization is %f' % ga.solve_with_tree())
     print(datetime.now() - start)
     print(ga.check())
     return
 
 
 if __name__ == '__main__':
-    # run()
-    test()
+    run()
+    # test()
