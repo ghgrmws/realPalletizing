@@ -1,7 +1,39 @@
-import treelib
+import queue
 from collections import namedtuple
-
 import numpy as np
+
+
+class TreeNode:
+    def __init__(self, father, obj, children):
+        self.father = father
+        self.obj = obj
+        self.children = children
+
+    def get_children(self):
+        return self.children
+
+    def get_obj(self):
+        return self.obj
+
+    def set_children(self, child):
+        if self.children is not None:
+            self.children.append(child)
+        else:
+            self.children = [child]
+
+
+class Tree:
+    def __init__(self, obj):
+        self.nodes = list()
+        self.nodes.append(TreeNode(None, obj, None))
+        self.size = 1
+
+        self.leaves = list()
+        self.leaves.append(self.nodes[0])
+
+    def get_all_leaves(self):
+        return self.leaves
+
 
 point = namedtuple('point', ('x', 'y', 'z'))
 
@@ -89,7 +121,7 @@ class Space:
         if self.rft.x <= opa.x or self.lbb.x >= opb.x or \
                 self.rft.y <= opa.y or self.lbb.y >= opb.y or \
                 self.rft.z <= opa.z or self.lbb.z >= opb.z:
-            return []
+            return None
         else:
             lbb = point(x=max(self.lbb.x, opa.x), y=max(self.lbb.y, opa.y), z=max(self.lbb.z, opa.z))
             rft = point(x=min(self.rft.x, opb.x), y=min(self.rft.y, opb.y), z=min(self.rft.z, opb.z))
@@ -126,8 +158,6 @@ class Coordinate:
         self.y = y
         self.z = z
         self.xy = np.array([[0 for j in range(y)] for i in range(x)])
-        self.space_tree = treelib.Tree()
-        self.space_tree.create_node(Space(point(x=0, y=0, z=0), point(x=x, y=y, z=z)), self.space_tree.size() + 1)
         self.positions = list()
 
     def place_box(self, box):
@@ -149,23 +179,18 @@ class Coordinate:
         w = box.get_width()
         h = box.get_height()
 
-        selected_space = None
-        max_dist = 0
-        for space in self.spaces:
-
-
         # with coordinate
-        # p = None
-        # max_dist = 0
-        # for i in range(self.x - d):
-        #     for j in range(self.y - w):
-        #         z = self.stable(i, j, d, w, h)
-        #         if z is not False:
-        #             dist = manh_dist((i + d, j + w, z + h), (self.x, self.y, self.z))
-        #             if dist > max_dist:
-        #                 p = point(x=i, y=j, z=z)
-        #                 max_dist = dist
-        return selected_space
+        p = None
+        max_dist = 0
+        for i in range(self.x - d):
+            for j in range(self.y - w):
+                z = self.stable(i, j, d, w, h)
+                if z is not False:
+                    dist = manh_dist((i + d, j + w, z + h), (self.x, self.y, self.z))
+                    if dist > max_dist:
+                        p = point(x=i, y=j, z=z)
+                        max_dist = dist
+        return p
 
     def stable(self, x, y, d, w, h):
         # legal_height = np.max(self.xy[x:x+d][y:y+w])

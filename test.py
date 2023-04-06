@@ -19,9 +19,18 @@ def test():
     # sin = sb.intersection(sa)
     # print(sa.cut_space(sin))
 
-    ss = []
-    for s in ss:
-        print(s)
+    s = set()
+    s.add(3)
+    s.add(4)
+    s.add(5)
+    cas = 0
+    for k in s:
+        s.remove(k)
+        for i in range(k):
+            s.add(cas)
+            cas += 1
+            print(s)
+            a =  10
     return 0
 
 
