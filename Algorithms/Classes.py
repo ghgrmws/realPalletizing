@@ -101,6 +101,7 @@ class Space:
     def __init__(self, pa, pb):
         try:
             if not (pb.x > pa.x and pb.y > pa.y and pb.z > pa.z):
+                print(pa, pb)
                 raise Exception("RuntimeError")
         except RuntimeError:
             print("Illegal constructive function parameter in class Space.")

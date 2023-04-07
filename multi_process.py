@@ -1,18 +1,30 @@
-from multiprocessing import  Process
+from multiprocessing import Pool
+import os, time
 
 
-def fun1(name):
-    print('测试%s多进程' %name)
+def long_time_task(name):
+    print('Run task %s (%s)...' % (name, os.getpid()))
+    start = time.time()
+    time.sleep(3)
+    end = time.time()
+    print('Task %s runs %0.2f seconds.' % (name, (end - start)))
+    return end - start
+
 
 
 if __name__ == '__main__':
-    process_list = []
-    for i in range(5):  #开启5个子进程执行fun1函数
-        p = Process(target=fun1,args=('Python',)) #实例化进程对象
-        p.start()
-        process_list.append(p)
+    q = list()
 
-    for i in process_list:
-        p.join()
+    print('Parent process %s.' % os.getpid())
 
-    print('结束测试')
+    p = Pool()
+    for i in range(15):
+        q.append(p.apply_async(long_time_task, args=(i,)))
+    print('Waiting for all subprocesses done...')
+
+    p.close()
+    p.join()
+    print('All subprocesses done.')
+
+    for res in q:
+        print(res.get())

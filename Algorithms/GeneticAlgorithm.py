@@ -1,5 +1,7 @@
+import os
 import random
 from collections import namedtuple
+from multiprocessing import Pool
 
 from Algorithms.Classes import Coordinate, Tree, TreeNode, Space
 
@@ -20,6 +22,10 @@ class Genetic:
         self.num_boxes = len(boxes)
         self.placed_boxes = list()
         self.positions = list()
+
+        self.best_seq_boxes = None
+        self.best_seq_positions = None
+
         self.utilization = -1
 
     # def solve_with_coordinate(self):
@@ -37,16 +43,30 @@ class Genetic:
     #     return self.utilization
 
     def solve(self):
+        pool = Pool()
+        results = list()
+
+        best_seq = None
         population_size = 10
         old_chromosomes = list()
         max_v = 0
         code = [i for i in range(self.num_boxes)]
         for i in range(population_size * 2):
             random.shuffle(code)
-            v = self.decode(code)
-            max_v = max(max_v, v)
-            old_chromosomes.append((v, old_chromosomes))
+            results.append(pool.apply_async(self.decode, args=(code,)))
+        pool.close()
+        pool.join()
+        for res in results:
+            v = res.get()
+            if v[0] > max_v:
+                max_v = v[0]
+                best_seq = v[1]
+                self.best_seq_boxes = self.placed_boxes
+                self.best_seq_positions = self.positions
+            old_chromosomes.append(list(v))
 
+        pool = Pool(10)
+        results = list()
         max_generation = 20
         generation = 0
         new_chromosomes = list()
@@ -66,15 +86,25 @@ class Genetic:
                 t = chromosome[1][a]
                 chromosome[1][a] = chromosome[1][b]
                 chromosome[1][b] = t
-                chromosome[0] = self.decode(chromosome[1])
-                max_v = max(max_v, chromosome[0])
-
+                new_chromosomes.remove(chromosome)
+                chromosome = self.decode(chromosome[1])
+                new_chromosomes.append(chromosome)
+                if chromosome[0] > max_v:
+                    max_v = chromosome[0]
+                    best_seq = chromosome[1]
+                    self.best_seq_boxes = self.placed_boxes
+                    self.best_seq_positions = self.positions
             generation += 1
             print("Generation %i with utilization %f" % (generation, max_v / (self.D * self.W * self.H)))
 
-        return 0
+        self.placed_boxes = best_seq
+
+        return max_v / (self.D * self.W * self.H)
 
     def decode(self, seq):
+        self.placed_boxes = list()
+        self.positions = list()
+
         space = Space(point(x=0, y=0, z=0), point(x=self.D, y=self.W, z=self.H))
 
         tree = Tree(space)
@@ -115,16 +145,16 @@ class Genetic:
                 self.positions.append(lbb)
                 self.placed_boxes.append(i)
                 v += self.all_boxes[i].get_volume()
-        return v
+        return v, seq
 
     def check(self):
-        num_box = len(self.placed_boxes)
+        num_box = len(self.best_seq_boxes)
         for i in range(num_box):
             for j in range(i + 1, num_box):
-                ap = self.positions[i]
-                ab = self.placed_boxes[i]
-                bp = self.positions[j]
-                bb = self.placed_boxes[j]
+                ap = self.best_seq_positions[i]
+                ab = self.best_seq_boxes[i]
+                bp = self.best_seq_positions[j]
+                bb = self.best_seq_boxes[j]
                 if ap.x + ab.get_depth() <= bp.x or \
                         bp.x + bb.get_depth() <= ap.x or \
                         ap.y + ab.get_width() <= bp.y or \
