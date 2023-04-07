@@ -113,7 +113,8 @@ class Space:
         return self.volume < other.volume()
 
     def __repr__(self):
-        return '(%i, %i, %i) -> (%i, %i, %i)' % (self.lbb.x, self.lbb.y, self.lbb.z, self.rft.x, self.rft.y, self.rft.z)
+        return '(%i, %i, %i) -> (%i, %i, %i)' % \
+            (self.lbb.x, self.lbb.y, self.lbb.z, self.rft.x, self.rft.y, self.rft.z)
 
     def get_lbb(self):  # left back bottom
         return self.lbb
@@ -123,6 +124,10 @@ class Space:
 
     def get_volume(self):
         return self.volume
+
+    def large_enough(self, limit):
+        return self.rft.x - self.lbb.x > limit[0] and self.rft.y - self.lbb.y > limit[1] \
+            and self.rft.y - self.lbb.y > limit[1]
 
     def intersection(self, other):
         opa = other.get_lbb()
