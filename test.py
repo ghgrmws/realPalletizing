@@ -15,7 +15,7 @@ def test():
 
 def run():
     start = datetime.now()
-    N, D, W, H, boxes = get_data("Try\\1.csv")  # 0.749825
+    N, D, W, H, boxes = get_data("Try\\0.csv")  # 0.749825
     ga = Genetic(D, W, H, boxes)
     print('The utilization is %f' % ga.solve())
     print(datetime.now() - start)

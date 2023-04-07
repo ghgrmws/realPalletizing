@@ -47,7 +47,7 @@ class Genetic:
         results = list()
 
         best_seq = None
-        population_size = 10
+        population_size = 20
         old_chromosomes = list()
         max_v = 0
         code = [i for i in range(self.num_boxes)]
@@ -61,12 +61,8 @@ class Genetic:
             if v[0] > max_v:
                 max_v = v[0]
                 best_seq = v[1]
-                self.best_seq_boxes = self.placed_boxes
-                self.best_seq_positions = self.positions
             old_chromosomes.append(list(v))
 
-        pool = Pool(10)
-        results = list()
         max_generation = 20
         generation = 0
         new_chromosomes = list()
@@ -78,6 +74,9 @@ class Genetic:
                 else:
                     new_chromosomes.append(b)
 
+            pool = Pool(10)
+            results = list()
+
             # mutate
             mute_times = 20
             for i in range(mute_times):
@@ -86,14 +85,15 @@ class Genetic:
                 t = chromosome[1][a]
                 chromosome[1][a] = chromosome[1][b]
                 chromosome[1][b] = t
-                new_chromosomes.remove(chromosome)
-                chromosome = self.decode(chromosome[1])
+                results.append(pool.apply_async(self.decode, args=(chromosome[1],)))
+            pool.close()
+            pool.join()
+            for re in results:
+                chromosome = re.get()
                 new_chromosomes.append(chromosome)
                 if chromosome[0] > max_v:
                     max_v = chromosome[0]
                     best_seq = chromosome[1]
-                    self.best_seq_boxes = self.placed_boxes
-                    self.best_seq_positions = self.positions
             generation += 1
             print("Generation %i with utilization %f" % (generation, max_v / (self.D * self.W * self.H)))
 

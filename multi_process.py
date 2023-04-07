@@ -24,7 +24,13 @@ if __name__ == '__main__':
 
     p.close()
     p.join()
-    print('All subprocesses done.')
+
+    for i in range(15):
+        q.append(p.apply_async(long_time_task, args=(i,)))
+    print('Waiting for all  22222222 done...')
+    p.close()
+    p.join()
+    print('All subprocesses222222222222222 done.')
 
     for res in q:
         print(res.get())
