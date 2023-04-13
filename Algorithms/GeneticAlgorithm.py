@@ -42,8 +42,8 @@ class Genetic:
     #     self.utilization = v / (self.D * self.W * self.H)
     #     return self.utilization
 
-    def solve(self):
-        pool = Pool()
+    def solve(self, num_process=10):
+        pool = Pool(num_process)
         results = list()
 
         best_seq = None
@@ -74,7 +74,7 @@ class Genetic:
                 else:
                     new_chromosomes.append(b)
 
-            pool = Pool(10)
+            pool = Pool(num_process)
             results = list()
 
             # mutate
@@ -102,6 +102,7 @@ class Genetic:
         return max_v / (self.D * self.W * self.H)
 
     def decode(self, seq):
+        print('Run task in (%s)...' % os.getpid())
         self.placed_boxes = list()
         self.positions = list()
 
