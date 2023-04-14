@@ -46,7 +46,7 @@ class Genetic:
     #     self.utilization = v / (self.D * self.W * self.H)
     #     return self.utilization
 
-    def solve(self, num_process=10):
+    def solve(self, num_process=20):
         positions = None
         selected_boxes = None
 
