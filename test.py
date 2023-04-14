@@ -9,7 +9,7 @@ point = namedtuple('point', ('x', 'y', 'z'))
 
 
 def test():
-
+    # test. test !
     return 0
 
 
