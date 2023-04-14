@@ -46,11 +46,11 @@ class Genetic:
     #     self.utilization = v / (self.D * self.W * self.H)
     #     return self.utilization
 
-    def solve(self):
+    def solve(self, num_process=10):
         positions = None
         selected_boxes = None
 
-        pool = Pool(10)
+        pool = Pool(num_process)
         results = list()
         population_size = 20
         old_chromosomes = list()
@@ -80,7 +80,7 @@ class Genetic:
                 else:
                     new_chromosomes.append(b)
 
-            pool = Pool(10)
+            pool = Pool(num_process)
             results = list()
 
             # mutate
