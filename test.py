@@ -11,17 +11,7 @@ point = namedtuple('point', ('x', 'y', 'z'))
 def test():
     a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     b = [1, 3, 5, 7, 9]
-    print(len(b))
-    cur = 0
-    for i in range(len(a)):
-        if b[cur] == a[i]:
-            del a[i]
-            a.insert(cur, b[cur])
-            cur += 1
-        print(a, cur)
-        if cur >= len(b):
-            break
-    print(a)
+    print(a + b)
     return 0
 
 

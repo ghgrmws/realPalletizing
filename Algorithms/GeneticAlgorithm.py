@@ -40,11 +40,16 @@ class Chromosome:
     def get_seq(self):
         return self.seq
 
-    def new_mutation(self):
+    def mute_new_one(self):
         seq = copy.deepcopy(self.seq)
+        a, b = random.sample(range(len(seq)), 2)
+        t = seq[a]
+        seq[a] = seq[b]
+        seq[b] = t
+        return seq
 
-        c = Chromosome()
-
+    def get_value(self):
+        return self.value
 
 class Genetic:
     def __init__(self, D, W, H, boxes):
@@ -79,31 +84,40 @@ class Genetic:
     #     self.utilization = v / (self.D * self.W * self.H)
     #     return self.utilization
 
+    def random_chromosomes(self, num_process, parent_size):
+        local_v = 0
+        local_c = None
+        pool = Pool(num_process)
+        pool_results = list()
+        seq = [i for i in range(self.num_boxes)]
+        for i in range(parent_size * 3):
+            random.shuffle(seq)
+            pool_results.append(pool.apply_async(self.decode, args=(seq,)))
+        pool.close()
+        pool.join()
+        chromosomes = list()
+        for res in pool_results:
+            v, seq, ps, bs = res.get()
+            chromosome = Chromosome(seq, ps, v)
+            chromosome.normalization(bs)
+            chromosomes.append(chromosome)
+            if v > local_v:
+                local_v = v
+                local_c = chromosome
+        return chromosomes, local_v, local_c
+
     def solve(self, num_process=20):
         positions = None
         selected_boxes = None
 
-        pool = Pool(num_process)
-        pool_results = list()
         parent_size = 20
-        old_chromosomes = list()
         max_v = 0
-        seqs = [i for i in range(self.num_boxes)]
-        for i in range(parent_size * 3):
-            random.shuffle(seqs)
-            pool_results.append(pool.apply_async(self.decode, args=(seqs,)))
-        pool.close()
-        pool.join()
-        for res in pool_results:
-            v, seq, ps, bs = res.get()
-            if v > max_v:
-                max_v = v
-                positions = ps
-                selected_boxes = bs
-            chromosome = Chromosome(seq, positions, v)
-            chromosome.normalization(bs)
-
-            old_chromosomes.append()
+        best_chromosome = None
+        chromosomes, local_v, local_c = self.random_chromosomes(num_process, parent_size * 3)
+        if max_v < local_v:
+            max_v = local_v
+            best_chromosome = local_c
+        old_chromosomes = chromosomes
 
         max_generation = 20
         generation = 0
@@ -111,32 +125,39 @@ class Genetic:
         while generation < max_generation:
             for i in range(parent_size):
                 a, b = random.sample(old_chromosomes, 2)
-                if a[0] > b[0]:
-                    new_chromosomes.append(a)
-                else:
+                if b.get_value() > a.get_value():
                     new_chromosomes.append(b)
+                else:
+                    new_chromosomes.append(a)
 
             pool = Pool(num_process)
             pool_results = list()
-
             # mutate
             mute_times = 20
             for i in range(mute_times):
-                chromosome = random.choice(new_chromosomes)
-                a, b = random.sample(range(self.num_boxes), 2)
-                t = chromosome[1][a]
-                chromosome[1][a] = chromosome[1][b]
-                chromosome[1][b] = t
-                pool_results.append(pool.apply_async(self.decode, args=(chromosome[1],)))
+                seq = random.choice(new_chromosomes).mute_new_one()
+                pool_results.append(pool.apply_async(self.decode, args=(seq,)))
             pool.close()
             pool.join()
-            for re in pool_results:
-                ret = re.get()
-                new_chromosomes.append([ret[0], ret[1]])
-                if ret[0] > max_v:
-                    max_v = ret[0]
-                    positions = ret[2]
-                    selected_boxes = ret[3]
+            for res in pool_results:
+                v, seq, ps, bs = res.get()
+                if v > max_v:
+                    max_v = v
+                    positions = ps
+                    selected_boxes = bs
+                chromosome = Chromosome(seq, ps, v)
+                chromosome.normalization(bs)
+                new_chromosomes.append(chromosome)
+
+            chromosomes, local_v, local_c = self.random_chromosomes(num_process, parent_size * 3)
+            if max_v < local_v:
+                max_v = local_v
+                best_chromosome = local_c
+            new_chromosomes = new_chromosomes + chromosomes
+
+            old_chromosomes = copy.deepcopy(new_chromosomes)
+            new_chromosomes = list()
+
             generation += 1
             print("Generation %i with utilization %f" % (generation, max_v / (self.D * self.W * self.H)))
 
@@ -145,9 +166,8 @@ class Genetic:
         self.utilization = max_v / (self.D * self.W * self.H)
         return self.utilization
 
-    def decode(self, chromosome):
-        print('Run task in (%s)...' % os.getpid())
-        seq = chromosome.get_seq()
+    def decode(self, seq):
+        # print('Run task in (%s)...' % os.getpid())
 
         positions = list()
         selected_boxes = list()
