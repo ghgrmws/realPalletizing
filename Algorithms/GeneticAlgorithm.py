@@ -1,9 +1,10 @@
+import copy
 import os
 import random
 from collections import namedtuple
 from multiprocessing import Pool
 
-from Algorithms.Classes import Coordinate, Tree, TreeNode, Space
+from Algorithms.Classes import Tree, TreeNode, Space
 
 
 point = namedtuple('point', ('x', 'y', 'z'))
@@ -11,6 +12,37 @@ point = namedtuple('point', ('x', 'y', 'z'))
 
 def manh_dist(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1]) + abs(a[2] - b[2])
+
+
+class Chromosome:
+    def __init__(self, seq):
+        self.seq = seq
+        self.L = len(seq)
+        self.cur = 0
+        self.value = -1
+
+    def randomize(self):
+        random.shuffle(self.seq)
+        self.cur = 0
+        self.value = -1
+
+    def normalization(self, selected):
+        L = len(selected)
+        for i in range(self.L):
+            if selected[self.cur] == self.seq[i]:
+                del self.seq[i]
+                self.seq.insert(self.cur, selected[self.cur])
+                self.cur += 1
+            if self.cur >= L:
+                break
+
+    def get_seq(self):
+        return self.seq
+
+    def new_mutation(self):
+        seq = copy.deepcopy(self.seq)
+
+        c = Chromosome()
 
 
 class Genetic:
@@ -30,7 +62,7 @@ class Genetic:
             self.limit[2] = min(self.limit[2], h)
         self.positions = None
         self.selected_boxes = None
-        self.utilization = -1
+        self.utilization = None
 
     # def solve_with_coordinate(self):
     #     space = Coordinate(self.D, self.W, self.H)
@@ -106,8 +138,8 @@ class Genetic:
 
         self.positions = positions
         self.selected_boxes = selected_boxes
-
-        return max_v / (self.D * self.W * self.H)
+        self.utilization = max_v / (self.D * self.W * self.H)
+        return self.utilization
 
     def decode(self, seq):
         print('Run task in (%s)...' % os.getpid())
@@ -180,3 +212,21 @@ class Genetic:
                     print(bp, bb)
                     return False
         return True
+
+    def print_solution(self, file_path):
+        if self.utilization is None:
+            self.utilization = self.solve()
+        num_box = len(self.selected_boxes)
+        boxes = list()
+        for i in range(num_box):
+            p = self.positions[i]
+            box = self.all_boxes[self.selected_boxes[i]]
+            box.set_position(p)
+            boxes.append(box)
+        boxes.sort()
+
+        with open(file_path, "a+") as f:
+            for box in boxes:
+                f.write(str(box) + '\n')
+
+        return boxes

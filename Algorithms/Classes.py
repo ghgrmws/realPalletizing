@@ -56,6 +56,7 @@ class Box:
         self.width = w  # y
         self.height = h  # z
         self.volume = d * w * h
+        self.p = point(x=0, y=0, z=0)
         self.rotated = False
 
     def set_depth(self, d):
@@ -78,6 +79,24 @@ class Box:
 
     def get_volume(self):
         return self.volume
+
+    def set_position(self, p):
+        self.p = p
+
+    def get_position(self):
+        return self.p
+
+    def __lt__(self, other):
+        p = other.get_position()
+        if self.p.z < p.z:
+            return True
+        elif self.p.z > p.z:
+            return False
+        else:
+            return self.p.x + self.p.y < p.x + p.y
+
+    def __str__(self):
+        return "%i,%i,%i,%i,%i,%i" % (self.depth, self.width, self.height, self.p.x, self.p.y, self.p.z)
 
     def set_(self, d, w, h):
         self.depth = d

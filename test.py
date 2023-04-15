@@ -9,17 +9,30 @@ point = namedtuple('point', ('x', 'y', 'z'))
 
 
 def test():
-    # test. test !
+    a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    b = [1, 3, 5, 7, 9]
+    print(len(b))
+    cur = 0
+    for i in range(len(a)):
+        if b[cur] == a[i]:
+            del a[i]
+            a.insert(cur, b[cur])
+            cur += 1
+        print(a, cur)
+        if cur >= len(b):
+            break
+    print(a)
     return 0
 
 
 def run():
     start = datetime.now()
-    N, D, W, H, boxes = get_data("Try\\0.csv")  # 0.834807
+    N, D, W, H, boxes = get_data("Try\\1.csv")  # 0.834807
     ga = Genetic(D, W, H, boxes)
     print('The utilization is %f' % ga.solve())
     print(datetime.now() - start)
     print(ga.check())
+    ga.print_solution("out.txt")
     return
 
 
