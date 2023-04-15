@@ -15,11 +15,12 @@ def manh_dist(a, b):
 
 
 class Chromosome:
-    def __init__(self, seq):
+    def __init__(self, seq, positions, v):
         self.seq = seq
+        self.positions = positions
         self.L = len(seq)
         self.cur = 0
-        self.value = -1
+        self.value = v
 
     def randomize(self):
         random.shuffle(self.seq)
@@ -83,29 +84,32 @@ class Genetic:
         selected_boxes = None
 
         pool = Pool(num_process)
-        results = list()
-        population_size = 20
+        pool_results = list()
+        parent_size = 20
         old_chromosomes = list()
         max_v = 0
-        code = [i for i in range(self.num_boxes)]
-        for i in range(population_size * 2):
-            random.shuffle(code)
-            results.append(pool.apply_async(self.decode, args=(code,)))
+        seqs = [i for i in range(self.num_boxes)]
+        for i in range(parent_size * 3):
+            random.shuffle(seqs)
+            pool_results.append(pool.apply_async(self.decode, args=(seqs,)))
         pool.close()
         pool.join()
-        for res in results:
-            ret = res.get()
-            if ret[0] > max_v:
-                max_v = ret[0]
-                positions = ret[2]
-                selected_boxes = ret[3]
-            old_chromosomes.append([ret[0], ret[1]])
+        for res in pool_results:
+            v, seq, ps, bs = res.get()
+            if v > max_v:
+                max_v = v
+                positions = ps
+                selected_boxes = bs
+            chromosome = Chromosome(seq, positions, v)
+            chromosome.normalization(bs)
+
+            old_chromosomes.append()
 
         max_generation = 20
         generation = 0
         new_chromosomes = list()
         while generation < max_generation:
-            for i in range(population_size):
+            for i in range(parent_size):
                 a, b = random.sample(old_chromosomes, 2)
                 if a[0] > b[0]:
                     new_chromosomes.append(a)
@@ -113,7 +117,7 @@ class Genetic:
                     new_chromosomes.append(b)
 
             pool = Pool(num_process)
-            results = list()
+            pool_results = list()
 
             # mutate
             mute_times = 20
@@ -123,10 +127,10 @@ class Genetic:
                 t = chromosome[1][a]
                 chromosome[1][a] = chromosome[1][b]
                 chromosome[1][b] = t
-                results.append(pool.apply_async(self.decode, args=(chromosome[1],)))
+                pool_results.append(pool.apply_async(self.decode, args=(chromosome[1],)))
             pool.close()
             pool.join()
-            for re in results:
+            for re in pool_results:
                 ret = re.get()
                 new_chromosomes.append([ret[0], ret[1]])
                 if ret[0] > max_v:
@@ -141,8 +145,9 @@ class Genetic:
         self.utilization = max_v / (self.D * self.W * self.H)
         return self.utilization
 
-    def decode(self, seq):
+    def decode(self, chromosome):
         print('Run task in (%s)...' % os.getpid())
+        seq = chromosome.get_seq()
 
         positions = list()
         selected_boxes = list()
