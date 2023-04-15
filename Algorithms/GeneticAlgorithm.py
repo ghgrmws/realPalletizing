@@ -51,6 +51,7 @@ class Chromosome:
     def get_value(self):
         return self.value
 
+
 class Genetic:
     def __init__(self, D, W, H, boxes):
         self.D = D
@@ -149,7 +150,7 @@ class Genetic:
                 chromosome.normalization(bs)
                 new_chromosomes.append(chromosome)
 
-            chromosomes, local_v, local_c = self.random_chromosomes(num_process, parent_size * 3)
+            chromosomes, local_v, local_c = self.random_chromosomes(num_process, parent_size)
             if max_v < local_v:
                 max_v = local_v
                 best_chromosome = local_c
