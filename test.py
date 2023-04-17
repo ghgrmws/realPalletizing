@@ -9,20 +9,18 @@ point = namedtuple('point', ('x', 'y', 'z'))
 
 
 def test():
-    a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    b = [1, 3, 5, 7, 9]
-    print(a + b)
+
     return 0
 
 
 def run():
     start = datetime.now()
-    N, D, W, H, boxes = get_data("Try\\0.csv")  # 0.834807
+    N, D, W, H, boxes = get_data("Data\\0.csv")  # 0.834807
     ga = Genetic(D, W, H, boxes)
     print('The utilization is %f' % ga.solve())
     print(datetime.now() - start)
     print(ga.check())
-    ga.print_solution("out.txt")
+    ga.print_solution("Data\\0.out")
     return
 
 

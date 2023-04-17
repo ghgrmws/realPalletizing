@@ -67,23 +67,10 @@ class Genetic:
             self.limit[0] = min(self.limit[0], d)
             self.limit[1] = min(self.limit[1], w)
             self.limit[2] = min(self.limit[2], h)
+        self.best_chromosome = None
         self.positions = None
         self.selected_boxes = None
         self.utilization = None
-
-    # def solve_with_coordinate(self):
-    #     space = Coordinate(self.D, self.W, self.H)
-    #     num_boxes = len(self.all_boxes)
-    #     seq = [i for i in range(num_boxes)]  # genes value & box id
-    #     # random.shuffle(seq)
-    #     v = 0
-    #     for i in seq:
-    #         if space.place_box(self.all_boxes[i]):
-    #             self.placed_boxes.append(self.all_boxes[i])
-    #             v += self.all_boxes[i].get_volume()
-    #     self.positions = space.get_positions()
-    #     self.utilization = v / (self.D * self.W * self.H)
-    #     return self.utilization
 
     def random_chromosomes(self, num_process, parent_size):
         local_v = 0
@@ -113,11 +100,10 @@ class Genetic:
 
         parent_size = 20
         max_v = 0
-        best_chromosome = None
         chromosomes, local_v, local_c = self.random_chromosomes(num_process, parent_size * 3)
         if max_v < local_v:
             max_v = local_v
-            best_chromosome = local_c
+            self.best_chromosome = local_c
         old_chromosomes = chromosomes
 
         max_generation = 20
@@ -153,7 +139,7 @@ class Genetic:
             chromosomes, local_v, local_c = self.random_chromosomes(num_process, parent_size)
             if max_v < local_v:
                 max_v = local_v
-                best_chromosome = local_c
+                self.best_chromosome = local_c
             new_chromosomes = new_chromosomes + chromosomes
 
             old_chromosomes = copy.deepcopy(new_chromosomes)
@@ -168,8 +154,6 @@ class Genetic:
         return self.utilization
 
     def decode(self, seq):
-        # print('Run task in (%s)...' % os.getpid())
-
         positions = list()
         selected_boxes = list()
 
@@ -239,20 +223,12 @@ class Genetic:
                     return False
         return True
 
-    def print_solution(self, file_path):
+    def save_solution(self, file_path):
         if self.utilization is None:
             self.utilization = self.solve()
+
         num_box = len(self.selected_boxes)
-        boxes = list()
-        for i in range(num_box):
-            p = self.positions[i]
-            box = self.all_boxes[self.selected_boxes[i]]
-            box.set_position(p)
-            boxes.append(box)
-        boxes.sort()
-
         with open(file_path, "a+") as f:
-            for box in boxes:
-                f.write(str(box) + '\n')
-
-        return boxes
+            for i in range(num_box):
+                p = self.positions[i]
+                f.write("%i,%i,%i,%i\n" % (self.selected_boxes[i], p.x, p.y, p.z))
