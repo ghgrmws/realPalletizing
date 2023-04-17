@@ -1,5 +1,4 @@
 import copy
-import os
 import random
 from collections import namedtuple
 from multiprocessing import Pool
@@ -26,16 +25,6 @@ class Chromosome:
         random.shuffle(self.seq)
         self.cur = 0
         self.value = -1
-
-    def normalization(self, selected):
-        L = len(selected)
-        for i in range(self.L):
-            if selected[self.cur] == self.seq[i]:
-                del self.seq[i]
-                self.seq.insert(self.cur, selected[self.cur])
-                self.cur += 1
-            if self.cur >= L:
-                break
 
     def get_seq(self):
         return self.seq
@@ -87,7 +76,6 @@ class Genetic:
         for res in pool_results:
             v, seq, ps, bs = res.get()
             chromosome = Chromosome(seq, ps, v)
-            chromosome.normalization(bs)
             chromosomes.append(chromosome)
             if v > local_v:
                 local_v = v
@@ -106,7 +94,7 @@ class Genetic:
             self.best_chromosome = local_c
         old_chromosomes = chromosomes
 
-        max_generation = 20
+        max_generation = 30
         generation = 0
         new_chromosomes = list()
         while generation < max_generation:
@@ -133,14 +121,13 @@ class Genetic:
                     positions = ps
                     selected_boxes = bs
                 chromosome = Chromosome(seq, ps, v)
-                chromosome.normalization(bs)
                 new_chromosomes.append(chromosome)
 
-            chromosomes, local_v, local_c = self.random_chromosomes(num_process, parent_size)
-            if max_v < local_v:
-                max_v = local_v
-                self.best_chromosome = local_c
-            new_chromosomes = new_chromosomes + chromosomes
+            # chromosomes, local_v, local_c = self.random_chromosomes(num_process, parent_size)
+            # if max_v < local_v:
+            #     max_v = local_v
+            #     self.best_chromosome = local_c
+            # new_chromosomes = new_chromosomes + chromosomes
 
             old_chromosomes = copy.deepcopy(new_chromosomes)
             new_chromosomes = list()
