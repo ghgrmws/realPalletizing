@@ -78,7 +78,7 @@ class Genetic:
         pool = Pool(num_process)
         pool_results = list()
         seq = [i for i in range(self.num_boxes)]
-        for i in range(parent_size * 3):
+        for i in range(parent_size):
             random.shuffle(seq)
             pool_results.append(pool.apply_async(self.decode, args=(seq,)))
         pool.close()

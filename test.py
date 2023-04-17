@@ -20,7 +20,7 @@ def run():
     print('The utilization is %f' % ga.solve())
     print(datetime.now() - start)
     print(ga.check())
-    ga.print_solution("Data\\0.out")
+    ga.save_solution("Data\\0.out")
     return
 
 
